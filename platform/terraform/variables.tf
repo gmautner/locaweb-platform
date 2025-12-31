@@ -59,15 +59,22 @@ variable "cloudstack_secret_key" {
   description = "CloudStack secret key."
 }
 
-variable "kubeconfig_path" {
+variable "ssh_user" {
   type        = string
-  description = "Path to the kubeconfig used by the Helm provider."
+  default     = "root"
+  description = "SSH user for control plane access."
 }
 
-variable "kubeconfig_context" {
+variable "kubeconfig_output_path" {
   type        = string
   default     = ""
-  description = "Optional kubeconfig context for the Helm provider."
+  description = "Path to write the generated kubeconfig. Leave empty to use /tmp."
+}
+
+variable "ssh_private_key_path" {
+  type        = string
+  default     = ""
+  description = "Path to write the generated SSH private key. Leave empty to use /tmp."
 }
 
 variable "traefik_namespace" {
@@ -233,11 +240,6 @@ variable "agent_service_offering" {
   description = "CloudStack service offering for agent nodes."
 }
 
-variable "ssh_public_key" {
-  type        = string
-  description = "SSH public key used to create a CloudStack keypair."
-}
-
 variable "tags" {
   type        = map(string)
   default     = {}
@@ -248,12 +250,6 @@ variable "expunge" {
   type        = bool
   default     = true
   description = "Whether to expunge instances on destroy."
-}
-
-variable "k3s_token" {
-  type        = string
-  sensitive   = true
-  description = "Shared token used by k3s servers and agents."
 }
 
 variable "k3s_install_url" {

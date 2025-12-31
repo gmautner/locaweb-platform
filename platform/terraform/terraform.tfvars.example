@@ -35,10 +35,6 @@ tags = {
   project = "locaweb"
 }
 
-# Helm provider
-kubeconfig_path = "~/.kube/config"
-kubeconfig_context = ""
-
 # Ingress PROXY protocol
 ingress_proxy_protocol_enabled = true
 ingress_proxy_protocol_trusted_ips = []
@@ -55,6 +51,10 @@ system_upgrade_namespace = "system-upgrade"
 # cert-manager
 cert_manager_email = "admin@example.com"
 
+# Output paths (optional)
+kubeconfig_output_path = ""
+ssh_private_key_path   = ""
+
 # Cilium API settings
 k8s_service_port = 6443
 
@@ -65,5 +65,4 @@ kured_time_zone  = "UTC"
 kured_period     = "15m"
 
 # k3s
-k3s_token   = "CHANGEME"
 k3s_version = "v1.29.6+k3s1"

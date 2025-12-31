@@ -22,3 +22,25 @@ output "ingress_public_ip" {
   value       = local.ingress_ip_address
   description = "Public IP reserved for ingress."
 }
+
+output "kubeconfig_path" {
+  value       = local.kubeconfig_path
+  description = "Local path to the generated kubeconfig."
+}
+
+output "kubeconfig" {
+  value       = try(file(local.kubeconfig_path), "")
+  description = "Kubeconfig content (sensitive). Empty if not yet generated."
+  sensitive   = true
+}
+
+output "ssh_private_key_path" {
+  value       = local.ssh_private_key_path
+  description = "Local path to the generated SSH private key."
+}
+
+output "ssh_private_key" {
+  value       = tls_private_key.ssh_key.private_key_openssh
+  description = "Generated SSH private key (sensitive)."
+  sensitive   = true
+}

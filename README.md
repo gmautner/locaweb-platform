@@ -22,8 +22,11 @@ This repository contains the Locaweb Internal Developer Platform, including clus
 
 1. Review `docs/DESIGN.md` for architecture and requirements.
 2. Use `platform/terraform/terraform.tfvars.example` as a starting point for configuration.
-3. Configure `kubeconfig_path` (and `kubeconfig_context` if needed) for Helm operations.
-4. Run Terraform or OpenTofu to provision the cluster.
+3. Run Terraform or OpenTofu to provision the cluster.
+
+## CI and Module Usage
+
+If this repository is used as a module or executed in CI/CD, avoid writing kubeconfig and SSH keys to the repo. See `docs/DESIGN.md` for recommended handling patterns (sensitive outputs, temp paths, or external secrets managers).
 
 ## Addons
 

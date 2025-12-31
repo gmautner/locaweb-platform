@@ -3,3 +3,9 @@ provider "cloudstack" {
   api_key    = var.cloudstack_api_key
   secret_key = var.cloudstack_secret_key
 }
+
+provider "helm" {
+  kubernetes = {
+    config_path = local.kubeconfig_path
+  }
+}

@@ -117,6 +117,38 @@ Expected behavior:
 3. Apply blueprints via Helm/Argo CD.
 4. If `recovery=true`, bootstrap restore workflows from the DR bucket.
 
+## Helm Coordination
+
+Terraform generates a kubeconfig from the control plane and uses it for Helm releases:
+
+- k3s token is generated automatically.
+- k3s installs via cloud-init and writes kubeconfig on the control plane.
+- Terraform fetches kubeconfig over SSH and uses it for Helm installs.
+
+## Sensitive Artifacts Handling
+
+The default flow writes generated kubeconfig and SSH key material locally. This is convenient but has risks:
+
+- Files can be accidentally committed unless excluded.
+- When used as a module, file paths resolve under the caller's workspace, which may be unexpected.
+- CI/CD runs need a deterministic and safe location for artifacts.
+
+Recommended alternatives:
+
+1) **Configurable output paths (preferred for local use)**
+   - Make kubeconfig and SSH key paths configurable (e.g., `kubeconfig_output_path`, `ssh_private_key_path`).
+   - Default to a temp or tool-managed directory (e.g., `$TF_DATA_DIR`, `/tmp`).
+   - Ensure `.gitignore` excludes any generated location if it resides in the repo.
+
+2) **Sensitive outputs + external storage (preferred for CI and module usage)**
+   - Expose SSH private key as a `sensitive` output.
+   - In CI, write kubeconfig and SSH key to ephemeral workspace files and store them as short-lived artifacts or inject directly into Helm/Kubernetes providers.
+   - For module use, the parent stack consumes outputs and decides where to persist (or avoids persistence entirely).
+
+3) **Managed secrets backend**
+   - Store kubeconfig and SSH key in a secrets manager (Vault, AWS Secrets Manager, etc.).
+   - The CI pipeline or parent module fetches them at runtime and avoids writing to disk when possible.
+
 ## k3s Upgrades (System Upgrade Controller)
 
 Use system-upgrade-controller to reconcile k3s version changes:
