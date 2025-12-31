@@ -1,0 +1,9 @@
+k3sVersion: ""
+labelKey: "k3s-upgrade"
+systemUpgradeServiceAccount: "system-upgrade"
+upgradeImage: "rancher/k3s-upgrade"
+prepareImage: "rancher/k3s-upgrade"
+serverConcurrency: 1
+agentConcurrency: 2
+drainForce: true
+drainSkipWaitForDeleteTimeout: 60

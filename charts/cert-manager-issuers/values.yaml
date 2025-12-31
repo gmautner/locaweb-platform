@@ -1,0 +1,4 @@
+email: ""
+server: "https://acme-v02.api.letsencrypt.org/directory"
+privateKeySecretName: "letsencrypt-http-prod"
+ingressClassName: "traefik"

@@ -1,0 +1,5 @@
+apiVersion: v2
+name: k3s-upgrade-plans
+description: K3s upgrade plans for system-upgrade-controller
+type: application
+version: 0.1.0

@@ -1,0 +1,30 @@
+apiVersion: upgrade.cattle.io/v1
+kind: Plan
+metadata:
+  name: k3s-agent
+  namespace: {{ .Release.Namespace }}
+  labels:
+    k3s-upgrade: agent
+spec:
+  concurrency: {{ .Values.agentConcurrency }}
+  version: {{ .Values.k3sVersion | quote }}
+  nodeSelector:
+    matchExpressions:
+      - key: {{ .Values.labelKey | quote }}
+        operator: Exists
+      - key: {{ .Values.labelKey | quote }}
+        operator: NotIn
+        values: ["disabled", "false"]
+      - key: k3os.io/mode
+        operator: DoesNotExist
+      - key: node-role.kubernetes.io/control-plane
+        operator: DoesNotExist
+  serviceAccountName: {{ .Values.systemUpgradeServiceAccount | quote }}
+  prepare:
+    image: {{ .Values.prepareImage | quote }}
+    args: ["prepare", "k3s-server"]
+  drain:
+    force: {{ .Values.drainForce }}
+    skipWaitForDeleteTimeout: {{ .Values.drainSkipWaitForDeleteTimeout }}
+  upgrade:
+    image: {{ .Values.upgradeImage | quote }}

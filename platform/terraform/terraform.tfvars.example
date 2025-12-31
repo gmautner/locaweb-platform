@@ -1,0 +1,69 @@
+# CloudStack API access
+cloudstack_api_url    = "https://cloudstack.example.com/client/api"
+cloudstack_api_key    = "CHANGEME"
+cloudstack_secret_key = "CHANGEME"
+
+# Cluster identity
+cluster_name = "locaweb-lite"
+
+# Control plane
+control_plane_count = 1
+control_plane_ips   = ["10.0.0.10"]
+control_plane_ip    = "10.0.0.10"
+control_plane_service_offering = "medium"
+
+# API load balancer (always enabled)
+api_lb_allowed_cidrs = ["0.0.0.0/0"]
+
+# Ingress public IP (always allocated)
+ingress_allowed_cidrs = ["0.0.0.0/0"]
+
+# Agents
+agent_count = 2
+agent_ips   = ["10.0.0.11", "10.0.0.12"]
+agent_service_offering = "large"
+
+# CloudStack resources
+cloudstack_zone       = "zone-1"
+cloudstack_network_id = "network-id"
+cloudstack_template   = "ubuntu-22.04"
+
+# Access and tags
+ssh_public_key = "ssh-ed25519 AAAA..."
+tags = {
+  env     = "dev"
+  project = "locaweb"
+}
+
+# Helm provider
+kubeconfig_path = "~/.kube/config"
+kubeconfig_context = ""
+
+# Ingress PROXY protocol
+ingress_proxy_protocol_enabled = true
+ingress_proxy_protocol_trusted_ips = []
+
+# Addon namespaces
+traefik_namespace       = "traefik"
+cert_manager_namespace  = "cert-manager"
+cilium_namespace        = "kube-system"
+kured_namespace         = "kube-system"
+k8up_namespace          = "k8up"
+cloudstack_namespace    = "cloudstack-system"
+system_upgrade_namespace = "system-upgrade"
+
+# cert-manager
+cert_manager_email = "admin@example.com"
+
+# Cilium API settings
+k8s_service_port = 6443
+
+# Kured schedule defaults
+kured_start_time = "5:00"
+kured_end_time   = "6:59"
+kured_time_zone  = "UTC"
+kured_period     = "15m"
+
+# k3s
+k3s_token   = "CHANGEME"
+k3s_version = "v1.29.6+k3s1"
