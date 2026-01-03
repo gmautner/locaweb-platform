@@ -66,3 +66,6 @@ kured_period     = "15m"
 
 # k3s
 k3s_version = "v1.29.6+k3s1"
+
+# k3s readiness
+k3s_ready_timeout_minutes = 15

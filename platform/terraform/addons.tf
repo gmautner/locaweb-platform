@@ -47,7 +47,7 @@ resource "helm_release" "traefik" {
 
   values = [yamlencode(local.traefik_values)]
 
-  depends_on = [helm_release.cilium, terraform_data.k3s_kubeconfig]
+  depends_on = [helm_release.cilium, terraform_data.k3s_ready]
 }
 
 resource "helm_release" "cert_manager" {
@@ -65,7 +65,7 @@ resource "helm_release" "cert_manager" {
     })
   ]
 
-  depends_on = [helm_release.cilium, terraform_data.k3s_kubeconfig]
+  depends_on = [helm_release.cilium, terraform_data.k3s_ready]
 }
 
 resource "helm_release" "cert_manager_issuers" {
@@ -84,7 +84,7 @@ resource "helm_release" "cert_manager_issuers" {
     })
   ]
 
-  depends_on = [helm_release.cert_manager, terraform_data.k3s_kubeconfig]
+  depends_on = [helm_release.cert_manager, terraform_data.k3s_ready]
 }
 
 resource "helm_release" "system_upgrade_controller" {
@@ -96,7 +96,7 @@ resource "helm_release" "system_upgrade_controller" {
 
   create_namespace = true
 
-  depends_on = [terraform_data.k3s_kubeconfig]
+  depends_on = [terraform_data.k3s_ready]
 }
 
 resource "helm_release" "k3s_upgrade_plans" {
@@ -116,7 +116,7 @@ resource "helm_release" "k3s_upgrade_plans" {
     })
   ]
 
-  depends_on = [helm_release.system_upgrade_controller, terraform_data.k3s_kubeconfig]
+  depends_on = [helm_release.system_upgrade_controller, terraform_data.k3s_ready]
 }
 
 resource "helm_release" "cloudstack_ccm" {
@@ -134,7 +134,7 @@ resource "helm_release" "cloudstack_ccm" {
     })
   ]
 
-  depends_on = [helm_release.cilium, terraform_data.k3s_kubeconfig]
+  depends_on = [helm_release.cilium, terraform_data.k3s_ready]
 }
 
 resource "helm_release" "cloudstack_csi" {
@@ -144,7 +144,7 @@ resource "helm_release" "cloudstack_csi" {
 
   create_namespace = true
 
-  depends_on = [helm_release.cloudstack_ccm, terraform_data.k3s_kubeconfig]
+  depends_on = [helm_release.cloudstack_ccm, terraform_data.k3s_ready]
 }
 
 resource "helm_release" "cilium" {
@@ -282,7 +282,7 @@ resource "helm_release" "kured" {
     })
   ]
 
-  depends_on = [helm_release.cilium, terraform_data.k3s_kubeconfig]
+  depends_on = [helm_release.cilium, terraform_data.k3s_ready]
 }
 
 resource "helm_release" "k8up" {
@@ -311,5 +311,5 @@ resource "helm_release" "k8up" {
     })
   ]
 
-  depends_on = [helm_release.cilium, terraform_data.k3s_kubeconfig]
+  depends_on = [helm_release.cilium, terraform_data.k3s_ready]
 }

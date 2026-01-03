@@ -143,6 +143,12 @@ variable "k3s_upgrade_drain_skip_wait_for_delete_timeout" {
   description = "Skip wait for delete timeout during k3s agent drain."
 }
 
+variable "k3s_ready_timeout_minutes" {
+  type        = number
+  default     = 15
+  description = "Timeout in minutes to wait for all k3s nodes to be Ready."
+}
+
 variable "cert_manager_email" {
   type        = string
   description = "Email used for ACME registration."

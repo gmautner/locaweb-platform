@@ -124,6 +124,7 @@ Terraform generates a kubeconfig from the control plane and uses it for Helm rel
 - k3s token is generated automatically.
 - k3s installs via cloud-init and writes kubeconfig on the control plane.
 - Terraform fetches kubeconfig over SSH and uses it for Helm installs.
+- Terraform waits for all nodes (control planes + agents) to be Ready before installing addons.
 
 ## Sensitive Artifacts Handling
 

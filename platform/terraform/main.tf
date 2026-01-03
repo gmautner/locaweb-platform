@@ -166,3 +166,46 @@ resource "terraform_data" "k3s_kubeconfig" {
     EOT
   }
 }
+
+resource "terraform_data" "k3s_ready" {
+  depends_on = [
+    terraform_data.k3s_kubeconfig,
+    cloudstack_instance.controlplane,
+    cloudstack_instance.agent
+  ]
+
+  provisioner "local-exec" {
+    interpreter = ["/bin/bash", "-c"]
+    command = <<EOT
+      set -e
+
+      export KUBECONFIG="${local.kubeconfig_path}"
+      EXPECTED=$(( ${var.control_plane_count} + ${var.agent_count} ))
+      TIMEOUT_SEC=$(( ${var.k3s_ready_timeout_minutes} * 60 ))
+      START_TS=$(date +%s)
+
+      if ! command -v jq >/dev/null 2>&1; then
+        echo "jq is required for readiness checks but was not found in PATH"
+        exit 1
+      fi
+
+      while true; do
+        READY_COUNT=$(kubectl get nodes -o json 2>/dev/null | jq '[.items[] | select(.status.conditions[]? | select(.type=="Ready" and .status=="True"))] | length')
+        TOTAL_COUNT=$(kubectl get nodes -o json 2>/dev/null | jq '.items | length')
+
+        if [ "$TOTAL_COUNT" -eq "$EXPECTED" ] && [ "$READY_COUNT" -eq "$EXPECTED" ]; then
+          exit 0
+        fi
+
+        NOW_TS=$(date +%s)
+        if [ $((NOW_TS - START_TS)) -ge "$TIMEOUT_SEC" ]; then
+          echo "Timed out waiting for nodes. Ready: $READY_COUNT, Total: $TOTAL_COUNT, Expected: $EXPECTED"
+          exit 1
+        fi
+
+        echo "Waiting for nodes: Ready ${READY_COUNT}/${EXPECTED}, Total ${TOTAL_COUNT}/${EXPECTED}"
+        sleep 10
+      done
+    EOT
+  }
+}
