@@ -1,7 +1,5 @@
 locals {
-  control_plane_ip_effective = var.control_plane_ip != "" ? var.control_plane_ip : (
-    length(var.control_plane_ips) > 0 ? var.control_plane_ips[0] : ""
-  )
+  control_plane_ip_effective = try(cloudstack_instance.controlplane[0].ip_address, "")
 
   k8s_api_endpoint = local.api_lb_ip_address
 
@@ -140,7 +138,7 @@ resource "cloudstack_instance" "controlplane" {
   template         = var.cloudstack_template
   zone             = var.cloudstack_zone
   network_id       = cloudstack_network.cluster.id
-  ip_address       = length(var.control_plane_ips) > count.index ? var.control_plane_ips[count.index] : null
+  ip_address       = null
   expunge          = var.expunge
   keypair          = cloudstack_ssh_keypair.cluster.name
   user_data        = base64encode(local.k3s_controlplane_user_data)
@@ -161,7 +159,7 @@ resource "cloudstack_instance" "agent" {
   template         = var.cloudstack_template
   zone             = var.cloudstack_zone
   network_id       = cloudstack_network.cluster.id
-  ip_address       = length(var.agent_ips) > count.index ? var.agent_ips[count.index] : null
+  ip_address       = null
   expunge          = var.expunge
   keypair          = cloudstack_ssh_keypair.cluster.name
   user_data        = base64encode(local.k3s_agent_user_data)

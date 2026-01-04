@@ -3,28 +3,6 @@ variable "cluster_name" {
   description = "Cluster name used for tagging and labeling."
 }
 
-variable "control_plane_ip" {
-  type        = string
-  default     = ""
-  description = "Control plane IP address used by agents and tls-san. Leave empty to use control_plane_ips[0]."
-  validation {
-    condition     = var.control_plane_ip != "" || length(var.control_plane_ips) > 0
-    error_message = "Either control_plane_ip must be set or control_plane_ips must include at least one IP."
-  }
-}
-
-variable "control_plane_ips" {
-  type        = list(string)
-  default     = []
-  description = "Optional list of fixed IPs for control plane instances."
-}
-
-variable "agent_ips" {
-  type        = list(string)
-  default     = []
-  description = "Optional list of fixed IPs for agent instances."
-}
-
 variable "control_plane_count" {
   type        = number
   default     = 1

@@ -124,6 +124,7 @@ Expected behavior:
 - Control planes must use at least `large`.
 - Agents must use at least `xlarge`.
 - Agent count must be at least 3; control planes must be 1 or 3.
+- Instance IPs are allocated by CloudStack; static IPs are not used.
 
 ## Helm Coordination
 
