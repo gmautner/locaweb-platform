@@ -82,48 +82,6 @@ variable "ssh_private_key_path" {
   description = "Path to write the generated SSH private key. Leave empty to use /tmp."
 }
 
-variable "traefik_namespace" {
-  type        = string
-  default     = "traefik"
-  description = "Namespace for Traefik."
-}
-
-variable "cert_manager_namespace" {
-  type        = string
-  default     = "cert-manager"
-  description = "Namespace for cert-manager."
-}
-
-variable "cilium_namespace" {
-  type        = string
-  default     = "kube-system"
-  description = "Namespace for Cilium."
-}
-
-variable "kured_namespace" {
-  type        = string
-  default     = "kube-system"
-  description = "Namespace for kured."
-}
-
-variable "k8up_namespace" {
-  type        = string
-  default     = "k8up"
-  description = "Namespace for k8up."
-}
-
-variable "cloudstack_namespace" {
-  type        = string
-  default     = "cloudstack-system"
-  description = "Namespace for CloudStack CCM and CSI."
-}
-
-variable "system_upgrade_namespace" {
-  type        = string
-  default     = "system-upgrade"
-  description = "Namespace for system-upgrade-controller and k3s upgrade plans."
-}
-
 variable "k3s_upgrade_server_concurrency" {
   type        = number
   default     = 1

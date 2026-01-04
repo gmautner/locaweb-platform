@@ -42,15 +42,6 @@ ssh_user = "root"
 ingress_proxy_protocol_enabled = true
 ingress_proxy_protocol_trusted_ips = []
 
-# Addon namespaces
-traefik_namespace       = "traefik"
-cert_manager_namespace  = "cert-manager"
-cilium_namespace        = "kube-system"
-kured_namespace         = "kube-system"
-k8up_namespace          = "k8up"
-cloudstack_namespace    = "cloudstack-system"
-system_upgrade_namespace = "system-upgrade"
-
 # cert-manager
 cert_manager_email = "admin@example.com"
 

@@ -41,7 +41,7 @@ resource "helm_release" "traefik" {
   repository = "https://traefik.github.io/charts"
   chart      = "traefik"
   version    = "~> 38.0.1"
-  namespace  = var.traefik_namespace
+  namespace  = "traefik"
 
   create_namespace = true
 
@@ -55,7 +55,7 @@ resource "helm_release" "cert_manager" {
   repository = "https://charts.jetstack.io"
   chart      = "cert-manager"
   version    = "~> 1.19.2"
-  namespace  = var.cert_manager_namespace
+  namespace  = "cert-manager"
 
   create_namespace = true
 
@@ -71,7 +71,7 @@ resource "helm_release" "cert_manager" {
 resource "helm_release" "cert_manager_issuers" {
   name      = "cert-manager-issuers"
   chart     = "${path.module}/../../charts/cert-manager-issuers"
-  namespace = var.cert_manager_namespace
+  namespace = "cert-manager"
 
   create_namespace = false
 
@@ -92,7 +92,7 @@ resource "helm_release" "system_upgrade_controller" {
   repository = "https://charts.rancher.io"
   chart      = "system-upgrade-controller"
   version    = "~> 108.0.0"
-  namespace  = var.system_upgrade_namespace
+  namespace  = "system-upgrade"
 
   create_namespace = true
 
@@ -102,7 +102,7 @@ resource "helm_release" "system_upgrade_controller" {
 resource "helm_release" "k3s_upgrade_plans" {
   name      = "k3s-upgrade-plans"
   chart     = "${path.module}/../../charts/k3s-upgrade-plans"
-  namespace = var.system_upgrade_namespace
+  namespace = "system-upgrade"
 
   create_namespace = false
 
@@ -122,7 +122,7 @@ resource "helm_release" "k3s_upgrade_plans" {
 resource "helm_release" "cloudstack_ccm" {
   name      = "cloudstack-ccm"
   chart     = "${path.module}/../../charts/cloudstack-ccm"
-  namespace = var.cloudstack_namespace
+  namespace = "cloudstack-system"
 
   create_namespace = true
 
@@ -140,7 +140,7 @@ resource "helm_release" "cloudstack_ccm" {
 resource "helm_release" "cloudstack_csi" {
   name      = "cloudstack-csi"
   chart     = "${path.module}/../../charts/cloudstack-csi"
-  namespace = var.cloudstack_namespace
+  namespace = "cloudstack-system"
 
   create_namespace = true
 
@@ -152,7 +152,7 @@ resource "helm_release" "cilium" {
   repository = "https://helm.cilium.io"
   chart      = "cilium"
   version    = "~> 1.18.5"
-  namespace  = var.cilium_namespace
+  namespace  = "kube-system"
 
   create_namespace = true
 
@@ -249,7 +249,7 @@ resource "helm_release" "kured" {
   repository = "https://kubereboot.github.io/charts"
   chart      = "kured"
   version    = "~> 5.10.0"
-  namespace  = var.kured_namespace
+  namespace  = "kube-system"
 
   create_namespace = true
 
@@ -292,7 +292,7 @@ resource "helm_release" "k8up" {
   repository = "https://k8up-io.github.io/k8up"
   chart      = "k8up"
   version    = "~> 4.8.6"
-  namespace  = var.k8up_namespace
+  namespace  = "k8up"
 
   create_namespace = true
 
