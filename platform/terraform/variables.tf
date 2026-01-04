@@ -18,8 +18,8 @@ variable "agent_count" {
   default     = 4
   description = "Number of agent instances."
   validation {
-    condition     = var.agent_count >= 4
-    error_message = "agent_count must be at least 4."
+    condition     = var.agent_count >= 3
+    error_message = "agent_count must be at least 3."
   }
 }
 
