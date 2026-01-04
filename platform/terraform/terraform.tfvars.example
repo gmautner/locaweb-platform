@@ -10,7 +10,7 @@ cluster_name = "locaweb-lite"
 control_plane_count = 1
 control_plane_ips   = ["10.0.0.10"]
 control_plane_ip    = "10.0.0.10"
-control_plane_service_offering = "medium"
+control_plane_service_offering = "large"
 
 # API load balancer (always enabled)
 api_lb_allowed_cidrs = ["0.0.0.0/0"]
@@ -19,14 +19,18 @@ api_lb_allowed_cidrs = ["0.0.0.0/0"]
 ingress_allowed_cidrs = ["0.0.0.0/0"]
 
 # Agents
-agent_count = 2
-agent_ips   = ["10.0.0.11", "10.0.0.12"]
-agent_service_offering = "large"
+agent_count = 3
+agent_ips   = ["10.0.0.11", "10.0.0.12", "10.0.0.13"]
+agent_service_offering = "xlarge"
 
 # CloudStack resources
-cloudstack_zone       = "zone-1"
-cloudstack_network_id = "network-id"
-cloudstack_template   = "ubuntu-22.04"
+cloudstack_zone     = "zone-1"
+cloudstack_template = "ubuntu-22.04"
+
+# CloudStack network
+network_cidr     = "192.168.0.0/21"
+network_offering = "c39d7786-2967-4b18-948e-a97d605cbf89"
+network_domain   = "cluster.local"
 
 # Access and tags
 tags = {

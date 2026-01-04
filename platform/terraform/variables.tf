@@ -29,12 +29,20 @@ variable "control_plane_count" {
   type        = number
   default     = 1
   description = "Number of control plane instances."
+  validation {
+    condition     = contains([1, 3], var.control_plane_count)
+    error_message = "control_plane_count must be 1 or 3."
+  }
 }
 
 variable "agent_count" {
   type        = number
-  default     = 2
+  default     = 3
   description = "Number of agent instances."
+  validation {
+    condition     = var.agent_count >= 3
+    error_message = "agent_count must be at least 3."
+  }
 }
 
 variable "cloudstack_zone" {
@@ -42,6 +50,23 @@ variable "cloudstack_zone" {
   description = "CloudStack zone name."
 }
 
+variable "network_cidr" {
+  type        = string
+  default     = "192.168.0.0/21"
+  description = "CIDR for the CloudStack network created per cluster."
+}
+
+variable "network_offering" {
+  type        = string
+  default     = "c39d7786-2967-4b18-948e-a97d605cbf89"
+  description = "CloudStack network offering to use."
+}
+
+variable "network_domain" {
+  type        = string
+  default     = "cluster.local"
+  description = "Network domain for the CloudStack network."
+}
 variable "cloudstack_api_url" {
   type        = string
   description = "CloudStack API endpoint."
@@ -214,14 +239,20 @@ variable "ingress_proxy_protocol_trusted_ips" {
   description = "Trusted IPs for PROXY protocol headers. Leave empty to allow any source."
 }
 
-variable "cloudstack_network_id" {
-  type        = string
-  description = "CloudStack network ID for instances."
-}
 
 variable "cloudstack_template" {
   type        = string
   description = "CloudStack template name or ID."
+}
+
+variable "cloudstack_offerings" {
+  type        = list(string)
+  default     = ["micro", "small", "medium", "large", "xlarge", "2xlarge", "4xlarge"]
+  description = "Allowed CloudStack service offerings."
+  validation {
+    condition     = contains(var.cloudstack_offerings, "large") && contains(var.cloudstack_offerings, "xlarge")
+    error_message = "cloudstack_offerings must include at least 'large' and 'xlarge'."
+  }
 }
 
 variable "api_lb_allowed_cidrs" {
@@ -239,11 +270,27 @@ variable "ingress_allowed_cidrs" {
 variable "control_plane_service_offering" {
   type        = string
   description = "CloudStack service offering for control plane nodes."
+  validation {
+    condition     = contains(var.cloudstack_offerings, var.control_plane_service_offering)
+    error_message = "control_plane_service_offering must be one of the allowed offerings."
+  }
+  validation {
+    condition     = index(var.cloudstack_offerings, var.control_plane_service_offering) >= index(var.cloudstack_offerings, "large")
+    error_message = "control_plane_service_offering must be at least large."
+  }
 }
 
 variable "agent_service_offering" {
   type        = string
   description = "CloudStack service offering for agent nodes."
+  validation {
+    condition     = contains(var.cloudstack_offerings, var.agent_service_offering)
+    error_message = "agent_service_offering must be one of the allowed offerings."
+  }
+  validation {
+    condition     = index(var.cloudstack_offerings, var.agent_service_offering) >= index(var.cloudstack_offerings, "xlarge")
+    error_message = "agent_service_offering must be at least xlarge."
+  }
 }
 
 variable "tags" {

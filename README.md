@@ -19,6 +19,12 @@ This repository contains the Locaweb Internal Developer Platform, including clus
 - CloudStack provider: `~> 0.5.0`
 - Local tools: `curl`, `jq`, `kubectl`, `ssh`
 
+## CloudStack Constraints
+
+- Per-cluster network is created from a predefined network offering.
+- Control planes require `large` or higher offerings.
+- Agents require `xlarge` or higher offerings and at least 3 nodes.
+
 ## Getting Started
 
 1. Review `docs/DESIGN.md` for architecture and requirements.

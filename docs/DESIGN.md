@@ -117,6 +117,14 @@ Expected behavior:
 3. Apply blueprints via Helm/Argo CD.
 4. If `recovery=true`, bootstrap restore workflows from the DR bucket.
 
+## CloudStack Offerings and Network
+
+- A dedicated CloudStack network is created per cluster using a predefined network offering.
+- Instance offerings are constrained to known sizes (micro, small, medium, large, xlarge, 2xlarge, 4xlarge).
+- Control planes must use at least `large`.
+- Agents must use at least `xlarge`.
+- Agent count must be at least 3; control planes must be 1 or 3.
+
 ## Helm Coordination
 
 Terraform generates a kubeconfig from the control plane and uses it for Helm releases:

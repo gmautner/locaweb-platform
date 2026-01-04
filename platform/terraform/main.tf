@@ -81,12 +81,24 @@ resource "cloudstack_ssh_keypair" "cluster" {
   public_key = tls_private_key.ssh_key.public_key_openssh
 }
 
+resource "cloudstack_network" "cluster" {
+  name             = var.cluster_name
+  cidr             = var.network_cidr
+  network_offering = var.network_offering
+  zone             = var.cloudstack_zone
+  network_domain   = var.network_domain
+  source_nat_ip    = true
+  tags             = var.tags
+}
+
 resource "cloudstack_ipaddress" "api_lb" {
   zone = var.cloudstack_zone
+  network_id  = cloudstack_network.cluster.id
 }
 
 resource "cloudstack_ipaddress" "ingress" {
   zone = var.cloudstack_zone
+  network_id  = cloudstack_network.cluster.id
 }
 
 resource "cloudstack_firewall" "api_lb" {
@@ -112,7 +124,7 @@ resource "cloudstack_firewall" "ingress" {
 resource "cloudstack_loadbalancer_rule" "api_lb" {
   name          = "${var.cluster_name}-kubeapi"
   ip_address_id = local.api_lb_ip_address_id
-  network_id    = var.cloudstack_network_id
+  network_id    = cloudstack_network.cluster.id
   algorithm     = "roundrobin"
   member_ids    = [for instance in cloudstack_instance.controlplane : instance.id]
   private_port  = 6443
@@ -127,7 +139,7 @@ resource "cloudstack_instance" "controlplane" {
   service_offering = var.control_plane_service_offering
   template         = var.cloudstack_template
   zone             = var.cloudstack_zone
-  network_id       = var.cloudstack_network_id
+  network_id       = cloudstack_network.cluster.id
   ip_address       = length(var.control_plane_ips) > count.index ? var.control_plane_ips[count.index] : null
   expunge          = var.expunge
   keypair          = cloudstack_ssh_keypair.cluster.name
@@ -148,7 +160,7 @@ resource "cloudstack_instance" "agent" {
   service_offering = var.agent_service_offering
   template         = var.cloudstack_template
   zone             = var.cloudstack_zone
-  network_id       = var.cloudstack_network_id
+  network_id       = cloudstack_network.cluster.id
   ip_address       = length(var.agent_ips) > count.index ? var.agent_ips[count.index] : null
   expunge          = var.expunge
   keypair          = cloudstack_ssh_keypair.cluster.name
