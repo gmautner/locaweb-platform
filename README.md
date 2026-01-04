@@ -17,6 +17,7 @@ This repository contains the Locaweb Internal Developer Platform, including clus
 
 - Terraform/OpenTofu: `~> 1.6.0`
 - CloudStack provider: `~> 0.5.0`
+- Local tools: `curl`, `jq`, `kubectl`, `ssh`
 
 ## Getting Started
 
@@ -34,3 +35,7 @@ Required addons are installed as separate Helm releases to keep one namespace pe
 CloudStack CCM/CSI are installed from local charts in `charts/cloudstack-ccm` and `charts/cloudstack-csi`.
 Default cert-manager ClusterIssuer is installed from `charts/cert-manager-issuers`.
 K3s upgrades are handled by system-upgrade-controller with plans in `charts/k3s-upgrade-plans`.
+
+## k3s Airgap Install
+
+k3s artifacts are downloaded once on the Terraform host and uploaded to nodes before install.

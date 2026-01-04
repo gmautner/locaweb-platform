@@ -13,26 +13,49 @@ locals {
 
   k3s_controlplane_user_data = templatefile("${path.module}/templates/k3s-controlplane.yaml.tmpl", {
     k3s_token              = random_password.k3s_token.result
-    k3s_install_url         = var.k3s_install_url
-    k3s_version             = var.k3s_version
     control_plane_tls_sans  = concat([local.k8s_api_endpoint], var.control_plane_tls_sans)
     control_plane_taints    = var.control_plane_taints
     control_plane_labels    = concat(["cluster=${var.cluster_name}"], var.control_plane_labels)
     disable_components      = var.disable_components
+    disable_kube_proxy      = var.disable_kube_proxy
+    disable_cloud_controller = var.disable_cloud_controller
+    disable_network_policy  = var.disable_network_policy
+    embedded_registry       = var.embedded_registry
     flannel_backend         = var.flannel_backend
+    kube_apiserver_args     = local.kube_apiserver_args
   })
 
   k3s_agent_user_data = templatefile("${path.module}/templates/k3s-agent.yaml.tmpl", {
     control_plane_ip = local.k8s_api_endpoint
     k3s_token         = random_password.k3s_token.result
-    k3s_install_url   = var.k3s_install_url
-    k3s_version       = var.k3s_version
     agent_labels      = concat(["cluster=${var.cluster_name}"], var.agent_labels)
     flannel_backend   = var.flannel_backend
+    agent_taints      = var.agent_taints
   })
 
   kubeconfig_path      = var.kubeconfig_output_path != "" ? var.kubeconfig_output_path : "/tmp/${var.cluster_name}-kubeconfig.yaml"
   ssh_private_key_path = var.ssh_private_key_path != "" ? var.ssh_private_key_path : "/tmp/${var.cluster_name}-ssh-key"
+
+  k3s_artifacts_dir  = "/tmp/${var.cluster_name}-k3s-artifacts"
+  k3s_install_script = "${local.k3s_artifacts_dir}/k3s-install.sh"
+  k3s_binary_name = lookup({
+    amd64 = "k3s"
+    arm64 = "k3s-arm64"
+    arm   = "k3s-armhf"
+  }, var.k3s_arch, "k3s")
+  k3s_binary_path  = "${local.k3s_artifacts_dir}/${local.k3s_binary_name}"
+  k3s_images_name  = "k3s-airgap-images-${var.k3s_arch}.tar"
+  k3s_images_path  = "${local.k3s_artifacts_dir}/${local.k3s_images_name}"
+
+  kube_apiserver_args = concat(
+    var.k3s_kube_apiserver_args,
+    var.oidc_issuer_url != "" && var.oidc_client_id != "" ? [
+      "oidc-issuer-url=${var.oidc_issuer_url}",
+      "oidc-client-id=${var.oidc_client_id}",
+      "oidc-username-claim=${var.oidc_username_claim}",
+      "oidc-username-prefix=${var.oidc_username_prefix}"
+    ] : []
+  )
 }
 
 resource "random_password" "k3s_token" {
@@ -139,10 +162,126 @@ resource "cloudstack_instance" "agent" {
   )
 }
 
+resource "terraform_data" "k3s_artifacts" {
+  triggers_replace = {
+    k3s_version = var.k3s_version
+    k3s_arch    = var.k3s_arch
+  }
+
+  provisioner "local-exec" {
+    interpreter = ["/bin/bash", "-c"]
+    command = <<EOT
+      set -e
+
+      mkdir -p "${local.k3s_artifacts_dir}"
+      curl -fsSL "${var.k3s_install_url}" -o "${local.k3s_install_script}"
+      curl -fsSL "https://github.com/k3s-io/k3s/releases/download/${var.k3s_version}/${local.k3s_binary_name}" -o "${local.k3s_binary_path}"
+      curl -fsSL "https://github.com/k3s-io/k3s/releases/download/${var.k3s_version}/${local.k3s_images_name}" -o "${local.k3s_images_path}"
+      chmod +x "${local.k3s_install_script}"
+    EOT
+  }
+}
+
+resource "terraform_data" "k3s_upload_controlplane" {
+  for_each = { for idx, inst in cloudstack_instance.controlplane : idx => inst }
+
+  triggers_replace = {
+    k3s_version = var.k3s_version
+    k3s_arch    = var.k3s_arch
+  }
+
+  depends_on = [
+    terraform_data.k3s_artifacts,
+    cloudstack_instance.controlplane,
+    local_file.ssh_private_key
+  ]
+
+  connection {
+    type        = "ssh"
+    user        = var.ssh_user
+    host        = each.value.ip_address
+    private_key = tls_private_key.ssh_key.private_key_openssh
+  }
+
+  provisioner "file" {
+    source      = local.k3s_install_script
+    destination = "/tmp/k3s-install.sh"
+  }
+
+  provisioner "file" {
+    source      = local.k3s_binary_path
+    destination = "/tmp/${local.k3s_binary_name}"
+  }
+
+  provisioner "file" {
+    source      = local.k3s_images_path
+    destination = "/tmp/${local.k3s_images_name}"
+  }
+
+  provisioner "remote-exec" {
+    inline = [
+      "sudo mkdir -p /var/lib/rancher/k3s/agent/images",
+      "sudo install -m 0755 /tmp/${local.k3s_binary_name} /usr/local/bin/k3s",
+      "sudo install -m 0755 /tmp/k3s-install.sh /usr/local/bin/k3s-install.sh",
+      "sudo mv /tmp/${local.k3s_images_name} /var/lib/rancher/k3s/agent/images/${local.k3s_images_name}",
+      "sudo INSTALL_K3S_SKIP_DOWNLOAD=true INSTALL_K3S_EXEC='server' /usr/local/bin/k3s-install.sh"
+    ]
+  }
+}
+
+resource "terraform_data" "k3s_upload_agent" {
+  for_each = { for idx, inst in cloudstack_instance.agent : idx => inst }
+
+  triggers_replace = {
+    k3s_version = var.k3s_version
+    k3s_arch    = var.k3s_arch
+  }
+
+  depends_on = [
+    terraform_data.k3s_artifacts,
+    cloudstack_instance.agent,
+    local_file.ssh_private_key,
+    terraform_data.k3s_upload_controlplane
+  ]
+
+  connection {
+    type        = "ssh"
+    user        = var.ssh_user
+    host        = each.value.ip_address
+    private_key = tls_private_key.ssh_key.private_key_openssh
+  }
+
+  provisioner "file" {
+    source      = local.k3s_install_script
+    destination = "/tmp/k3s-install.sh"
+  }
+
+  provisioner "file" {
+    source      = local.k3s_binary_path
+    destination = "/tmp/${local.k3s_binary_name}"
+  }
+
+  provisioner "file" {
+    source      = local.k3s_images_path
+    destination = "/tmp/${local.k3s_images_name}"
+  }
+
+  provisioner "remote-exec" {
+    inline = [
+      "sudo mkdir -p /var/lib/rancher/k3s/agent/images",
+      "sudo install -m 0755 /tmp/${local.k3s_binary_name} /usr/local/bin/k3s",
+      "sudo install -m 0755 /tmp/k3s-install.sh /usr/local/bin/k3s-install.sh",
+      "sudo mv /tmp/${local.k3s_images_name} /var/lib/rancher/k3s/agent/images/${local.k3s_images_name}",
+      "sudo INSTALL_K3S_SKIP_DOWNLOAD=true INSTALL_K3S_EXEC='agent' /usr/local/bin/k3s-install.sh"
+    ]
+  }
+}
+
 resource "terraform_data" "k3s_kubeconfig" {
   depends_on = [
     cloudstack_instance.controlplane,
-    local_file.ssh_private_key
+    local_file.ssh_private_key,
+    terraform_data.k3s_upload_controlplane
   ]
 
   provisioner "local-exec" {
@@ -170,8 +309,10 @@ resource "terraform_data" "k3s_kubeconfig" {
 resource "terraform_data" "k3s_ready" {
   depends_on = [
     terraform_data.k3s_kubeconfig,
+    helm_release.cilium,
     cloudstack_instance.controlplane,
-    cloudstack_instance.agent
+    cloudstack_instance.agent,
+    terraform_data.k3s_upload_agent
   ]
 
   provisioner "local-exec" {

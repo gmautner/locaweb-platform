@@ -264,6 +264,16 @@ variable "k3s_install_url" {
   description = "Install script URL for k3s."
 }
 
+variable "k3s_arch" {
+  type        = string
+  default     = "amd64"
+  description = "k3s architecture for binary and airgap images (amd64, arm64, arm)."
+  validation {
+    condition     = contains(["amd64", "arm64", "arm"], var.k3s_arch)
+    error_message = "k3s_arch must be one of: amd64, arm64, arm."
+  }
+}
+
 variable "k3s_version" {
   type        = string
   description = "Pinned k3s version to install (required)."
@@ -281,8 +291,14 @@ variable "control_plane_tls_sans" {
 
 variable "control_plane_taints" {
   type        = list(string)
-  default     = ["node-role.kubernetes.io/control-plane=true:NoSchedule"]
+  default     = ["node-role.kubernetes.io/control-plane=true:NoSchedule", "CriticalAddonsOnly=true:NoExecute"]
   description = "Taints applied to control plane nodes."
+}
+
+variable "agent_taints" {
+  type        = list(string)
+  default     = ["node.cilium.io/agent-not-ready=true:NoExecute"]
+  description = "Taints applied to agent nodes."
 }
 
 variable "control_plane_labels" {
@@ -299,10 +315,63 @@ variable "agent_labels" {
 
 variable "disable_components" {
   type        = list(string)
-  default     = ["servicelb", "traefik"]
+  default     = ["servicelb", "traefik", "local-storage"]
   description = "k3s components to disable by default."
 }
 
+variable "disable_kube_proxy" {
+  type        = bool
+  default     = true
+  description = "Disable kube-proxy in k3s."
+}
+
+variable "disable_cloud_controller" {
+  type        = bool
+  default     = true
+  description = "Disable in-tree cloud controller in k3s."
+}
+
+variable "disable_network_policy" {
+  type        = bool
+  default     = true
+  description = "Disable built-in network policy controller in k3s."
+}
+
+variable "embedded_registry" {
+  type        = bool
+  default     = true
+  description = "Enable embedded registry in k3s."
+}
+
+variable "k3s_kube_apiserver_args" {
+  type        = list(string)
+  default     = ["request-timeout=300s"]
+  description = "Extra kube-apiserver arguments for k3s."
+}
+
+variable "oidc_issuer_url" {
+  type        = string
+  default     = ""
+  description = "OIDC issuer URL for kube-apiserver."
+}
+
+variable "oidc_client_id" {
+  type        = string
+  default     = ""
+  description = "OIDC client ID for kube-apiserver."
+}
+
+variable "oidc_username_claim" {
+  type        = string
+  default     = "preferred_username"
+  description = "OIDC username claim for kube-apiserver."
+}
+
+variable "oidc_username_prefix" {
+  type        = string
+  default     = "oidc:"
+  description = "OIDC username prefix for kube-apiserver."
+}
 variable "flannel_backend" {
   type        = string
   default     = "none"

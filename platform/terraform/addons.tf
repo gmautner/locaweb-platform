@@ -240,6 +240,8 @@ resource "helm_release" "cilium" {
       }
     })
   ]
+
+  depends_on = [terraform_data.k3s_kubeconfig]
 }
 
 resource "helm_release" "kured" {

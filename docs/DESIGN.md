@@ -122,7 +122,7 @@ Expected behavior:
 Terraform generates a kubeconfig from the control plane and uses it for Helm releases:
 
 - k3s token is generated automatically.
-- k3s installs via cloud-init and writes kubeconfig on the control plane.
+- k3s installs via uploaded airgap artifacts and writes kubeconfig on the control plane.
 - Terraform fetches kubeconfig over SSH and uses it for Helm installs.
 - Terraform waits for all nodes (control planes + agents) to be Ready before installing addons.
 
@@ -164,7 +164,7 @@ Goal: remove external Ansible playbooks and use a simpler, more direct bootstrap
 
 Preferred approach:
 
-- **Cloud-init + k3s install script:** Use instance user-data to install k3s on control plane and agents with `INSTALL_K3S_EXEC` flags.
+- **Cloud-init + airgap artifacts:** Use instance user-data to write config, then upload airgap artifacts and run the install script via SSH.
 - **Single control plane default:** Agents join using a shared token and control plane IP.
 - **Optional HA:** Add extra control planes and an internal load balancer only when enabled.
 
@@ -172,7 +172,10 @@ Implementation notes:
 
 - Keep configuration in Terraform variables and render into user-data templates.
 - Use a local cloud-init template for control planes and agents (no external repo dependency).
-- Avoid SSH-based orchestration as the default path; keep it as a fallback only if needed.
+- Download k3s artifacts once, then upload to all nodes.
+- Install k3s with `INSTALL_K3S_SKIP_DOWNLOAD=true` to avoid external fetches.
+- Artifact downloads use the official k3s release URLs and run on the Terraform host.
+- SSH connectivity to all nodes is required for artifact upload and installation.
 
 ### Cloud-Init Template Sketch
 
@@ -189,12 +192,22 @@ write_files:
         - ${CONTROL_PLANE_IP}
       node-taint:
         - "node-role.kubernetes.io/control-plane=true:NoSchedule"
+        - "CriticalAddonsOnly=true:NoExecute"
       disable:
         - servicelb
         - traefik
+        - local-storage
+      disable-kube-proxy: true
+      disable-cloud-controller: true
+      disable-network-policy: true
+      embedded-registry: true
       flannel-backend: none
-runcmd:
-  - "curl -sfL https://get.k3s.io | INSTALL_K3S_EXEC='server' sh -"
+      kube-apiserver-arg:
+        - oidc-issuer-url=${OIDC_ISSUER_URL}
+        - oidc-client-id=${OIDC_CLIENT_ID}
+        - oidc-username-claim=preferred_username
+        - oidc-username-prefix=oidc:
+        - request-timeout=300s
 ```
 
 Agent user-data:
@@ -209,9 +222,10 @@ write_files:
       token: ${K3S_TOKEN}
       node-label:
         - "node-role.kubernetes.io/worker=true"
+        - "k3s-upgrade=true"
+      node-taint:
+        - "node.cilium.io/agent-not-ready=true:NoExecute"
       flannel-backend: none
-runcmd:
-  - "curl -sfL https://get.k3s.io | INSTALL_K3S_EXEC='agent' sh -"
 ```
 
 Flags and conventions:
@@ -220,6 +234,7 @@ Flags and conventions:
 - Use `flannel-backend=none` when Cilium is the CNI.
 - Configure control plane taints by default; allow override for single-node setups.
 - Keep all parameters templated in Terraform to avoid external dependencies.
+- OIDC values may be left empty until the IdP is deployed; k3s will still start with OIDC disabled.
 
 ### API Load Balancer (Default)
 
