@@ -48,6 +48,7 @@ variable "network_domain" {
 }
 variable "cloudstack_api_url" {
   type        = string
+  default     = "https://painel-cloud.locaweb.com.br/client/api"
   description = "CloudStack API endpoint."
 }
 
