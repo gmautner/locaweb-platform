@@ -292,12 +292,6 @@ variable "k3s_version" {
   }
 }
 
-variable "control_plane_tls_sans" {
-  type        = list(string)
-  default     = []
-  description = "Additional TLS SANs for the control plane."
-}
-
 variable "control_plane_taints" {
   type        = list(string)
   default     = ["node-role.kubernetes.io/control-plane=true:NoSchedule", "CriticalAddonsOnly=true:NoExecute"]

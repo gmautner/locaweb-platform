@@ -11,7 +11,7 @@ locals {
 
   k3s_controlplane_user_data = templatefile("${path.module}/templates/k3s-controlplane.yaml.tmpl", {
     k3s_token              = random_password.k3s_token.result
-    control_plane_tls_sans  = concat([local.k8s_api_endpoint], var.control_plane_tls_sans)
+    control_plane_tls_sans  = [local.k8s_api_endpoint]
     control_plane_taints    = var.control_plane_taints
     control_plane_labels    = concat(["cluster=${var.cluster_name}"], var.control_plane_labels)
     disable_components      = var.disable_components
