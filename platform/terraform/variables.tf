@@ -25,6 +25,7 @@ variable "agent_count" {
 
 variable "cloudstack_zone" {
   type        = string
+  default     = "ZP01"
   description = "CloudStack zone name."
 }
 
