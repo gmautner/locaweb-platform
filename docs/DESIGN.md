@@ -173,68 +173,57 @@ Goal: remove external Ansible playbooks and use a simpler, more direct bootstrap
 
 Preferred approach:
 
-- **Cloud-init + airgap artifacts:** Use instance user-data to write config, then upload airgap artifacts and run the install script via SSH.
+- **SSH + airgap artifacts:** Upload config and artifacts, then run the install script via SSH.
 - **Single control plane default:** Agents join using a shared token and control plane IP.
 - **Optional HA:** Add extra control planes and an internal load balancer only when enabled.
 
 Implementation notes:
 
-- Keep configuration in Terraform variables and render into user-data templates.
-- Use a local cloud-init template for control planes and agents (no external repo dependency).
+- Keep configuration in Terraform variables and render into local config templates.
 - Download k3s artifacts once, then upload to all nodes.
 - Install k3s with `INSTALL_K3S_SKIP_DOWNLOAD=true` to avoid external fetches.
 - Artifact downloads use the official k3s release URLs and run on the Terraform host.
 - SSH connectivity to all nodes is required for artifact upload and installation.
 
-### Cloud-Init Template Sketch
+### k3s Config Template Sketch
 
-Control plane user-data:
+Control plane config:
 
 ```yaml
-#cloud-config
-write_files:
-  - path: /etc/rancher/k3s/config.yaml
-    permissions: "0600"
-    content: |
-      token: ${K3S_TOKEN}
-      tls-san:
-        - ${CONTROL_PLANE_IP}
-      node-taint:
-        - "node-role.kubernetes.io/control-plane=true:NoSchedule"
-        - "CriticalAddonsOnly=true:NoExecute"
-      disable:
-        - servicelb
-        - traefik
-        - local-storage
-      disable-kube-proxy: true
-      disable-cloud-controller: true
-      disable-network-policy: true
-      embedded-registry: true
-      flannel-backend: none
-      kube-apiserver-arg:
-        - oidc-issuer-url=${OIDC_ISSUER_URL}
-        - oidc-client-id=${OIDC_CLIENT_ID}
-        - oidc-username-claim=preferred_username
-        - oidc-username-prefix=oidc:
-        - request-timeout=300s
+token: ${K3S_TOKEN}
+tls-san:
+  - ${CONTROL_PLANE_IP}
+node-taint:
+  - "node-role.kubernetes.io/control-plane=true:NoSchedule"
+  - "CriticalAddonsOnly=true:NoExecute"
+disable:
+  - servicelb
+  - traefik
+  - local-storage
+disable-kube-proxy: true
+disable-cloud-controller: true
+disable-network-policy: true
+embedded-registry: true
+flannel-backend: none
+kube-apiserver-arg:
+  - oidc-issuer-url=${OIDC_ISSUER_URL}
+  - oidc-client-id=${OIDC_CLIENT_ID}
+  - oidc-username-claim=preferred_username
+  - oidc-username-prefix=oidc:
+  - request-timeout=300s
 ```
 
-Agent user-data:
+Agent config:
 
 ```yaml
-#cloud-config
-write_files:
-  - path: /etc/rancher/k3s/config.yaml
-    permissions: "0600"
-    content: |
-      server: https://${CONTROL_PLANE_IP}:6443
-      token: ${K3S_TOKEN}
-      node-label:
-        - "node-role.kubernetes.io/worker=true"
-        - "k3s-upgrade=true"
-      node-taint:
-        - "node.cilium.io/agent-not-ready=true:NoExecute"
-      flannel-backend: none
+server: https://${CONTROL_PLANE_IP}:6443
+token: ${K3S_TOKEN}
+node-label:
+  - "node-role.kubernetes.io/worker=true"
+  - "k3s-upgrade=true"
+node-taint:
+  - "node.cilium.io/agent-not-ready=true:NoExecute"
+flannel-backend: none
 ```
 
 Flags and conventions:

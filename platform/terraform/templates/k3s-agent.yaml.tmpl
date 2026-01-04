@@ -1,20 +1,11 @@
-#cloud-config
-write_files:
-  - path: /etc/rancher/k3s/config.yaml
-    permissions: "0600"
-    content: |
-      server: https://${control_plane_ip}:6443
-      token: ${k3s_token}
-%{ if length(agent_labels) > 0 ~}
-      node-label:
+server: https://${control_plane_ip}:6443
+token: ${k3s_token}
+node-label:
 %{ for label in agent_labels ~}
-        - ${label}
+  - ${label}
 %{ endfor ~}
-%{ endif ~}
-%{ if length(agent_taints) > 0 ~}
-      node-taint:
+node-taint:
 %{ for taint in agent_taints ~}
-        - ${taint}
+  - ${taint}
 %{ endfor ~}
-%{ endif ~}
-      flannel-backend: ${flannel_backend}
+flannel-backend: ${flannel_backend}

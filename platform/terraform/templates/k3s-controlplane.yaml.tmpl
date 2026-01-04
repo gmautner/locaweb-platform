@@ -1,49 +1,36 @@
-#cloud-config
-write_files:
-  - path: /etc/rancher/k3s/config.yaml
-    permissions: "0600"
-    content: |
-      token: ${k3s_token}
-%{ if length(control_plane_tls_sans) > 0 ~}
-      tls-san:
+token: ${k3s_token}
+tls-san:
 %{ for san in control_plane_tls_sans ~}
-        - ${san}
+  - ${san}
 %{ endfor ~}
-%{ endif ~}
-%{ if length(control_plane_taints) > 0 ~}
-      node-taint:
+node-taint:
 %{ for taint in control_plane_taints ~}
-        - ${taint}
+  - ${taint}
 %{ endfor ~}
-%{ endif ~}
-%{ if length(control_plane_labels) > 0 ~}
-      node-label:
+node-label:
 %{ for label in control_plane_labels ~}
-        - ${label}
+  - ${label}
 %{ endfor ~}
-%{ endif ~}
-%{ if length(disable_components) > 0 ~}
-      disable:
+disable:
 %{ for component in disable_components ~}
-        - ${component}
+  - ${component}
 %{ endfor ~}
-%{ endif ~}
 %{ if disable_kube_proxy ~}
-      disable-kube-proxy: true
+disable-kube-proxy: true
 %{ endif ~}
 %{ if disable_cloud_controller ~}
-      disable-cloud-controller: true
+disable-cloud-controller: true
 %{ endif ~}
 %{ if disable_network_policy ~}
-      disable-network-policy: true
+disable-network-policy: true
 %{ endif ~}
 %{ if embedded_registry ~}
-      embedded-registry: true
+embedded-registry: true
 %{ endif ~}
-      flannel-backend: ${flannel_backend}
+flannel-backend: ${flannel_backend}
 %{ if length(kube_apiserver_args) > 0 ~}
-      kube-apiserver-arg:
+kube-apiserver-arg:
 %{ for arg in kube_apiserver_args ~}
-        - ${arg}
+  - ${arg}
 %{ endfor ~}
 %{ endif ~}

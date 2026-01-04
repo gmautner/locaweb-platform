@@ -9,8 +9,8 @@ locals {
   ingress_ip_address_id = cloudstack_ipaddress.ingress.id
   ingress_ip_address    = cloudstack_ipaddress.ingress.ip_address
 
-  k3s_controlplane_user_data = templatefile("${path.module}/templates/k3s-controlplane.yaml.tmpl", {
-    k3s_token              = random_password.k3s_token.result
+  k3s_controlplane_config = templatefile("${path.module}/templates/k3s-controlplane.yaml.tmpl", {
+    k3s_token               = random_password.k3s_token.result
     control_plane_tls_sans  = [local.k8s_api_endpoint]
     control_plane_taints    = var.control_plane_taints
     control_plane_labels    = concat(["cluster=${var.cluster_name}"], var.control_plane_labels)
@@ -23,7 +23,7 @@ locals {
     kube_apiserver_args     = local.kube_apiserver_args
   })
 
-  k3s_agent_user_data = templatefile("${path.module}/templates/k3s-agent.yaml.tmpl", {
+  k3s_agent_config = templatefile("${path.module}/templates/k3s-agent.yaml.tmpl", {
     control_plane_ip = local.k8s_api_endpoint
     k3s_token         = random_password.k3s_token.result
     agent_labels      = concat(["cluster=${var.cluster_name}"], var.agent_labels)
@@ -140,7 +140,6 @@ resource "cloudstack_instance" "controlplane" {
   network_id       = cloudstack_network.cluster.id
   expunge          = var.expunge
   keypair          = cloudstack_ssh_keypair.cluster.name
-  user_data        = base64encode(local.k3s_controlplane_user_data)
   tags = merge(
     var.tags,
     {
@@ -160,7 +159,6 @@ resource "cloudstack_instance" "agent" {
   network_id       = cloudstack_network.cluster.id
   expunge          = var.expunge
   keypair          = cloudstack_ssh_keypair.cluster.name
-  user_data        = base64encode(local.k3s_agent_user_data)
   tags = merge(
     var.tags,
     {
@@ -217,6 +215,11 @@ resource "terraform_data" "k3s_upload_controlplane" {
   }
 
   provisioner "file" {
+    content     = local.k3s_controlplane_config
+    destination = "/tmp/k3s-config.yaml"
+  }
+
+  provisioner "file" {
     source      = local.k3s_binary_path
     destination = "/tmp/${local.k3s_binary_name}"
   }
@@ -229,6 +232,8 @@ resource "terraform_data" "k3s_upload_controlplane" {
   provisioner "remote-exec" {
     inline = [
       "sudo mkdir -p /var/lib/rancher/k3s/agent/images",
+      "sudo mkdir -p /etc/rancher/k3s",
+      "sudo install -m 0600 /tmp/k3s-config.yaml /etc/rancher/k3s/config.yaml",
       "sudo install -m 0755 /tmp/${local.k3s_binary_name} /usr/local/bin/k3s",
       "sudo install -m 0755 /tmp/k3s-install.sh /usr/local/bin/k3s-install.sh",
       "sudo mv /tmp/${local.k3s_images_name} /var/lib/rancher/k3s/agent/images/${local.k3s_images_name}",
@@ -265,6 +270,11 @@ resource "terraform_data" "k3s_upload_agent" {
   }
 
   provisioner "file" {
+    content     = local.k3s_agent_config
+    destination = "/tmp/k3s-config.yaml"
+  }
+
+  provisioner "file" {
     source      = local.k3s_binary_path
     destination = "/tmp/${local.k3s_binary_name}"
   }
@@ -277,6 +287,8 @@ resource "terraform_data" "k3s_upload_agent" {
   provisioner "remote-exec" {
     inline = [
       "sudo mkdir -p /var/lib/rancher/k3s/agent/images",
+      "sudo mkdir -p /etc/rancher/k3s",
+      "sudo install -m 0600 /tmp/k3s-config.yaml /etc/rancher/k3s/config.yaml",
       "sudo install -m 0755 /tmp/${local.k3s_binary_name} /usr/local/bin/k3s",
       "sudo install -m 0755 /tmp/k3s-install.sh /usr/local/bin/k3s-install.sh",
       "sudo mv /tmp/${local.k3s_images_name} /var/lib/rancher/k3s/agent/images/${local.k3s_images_name}",
