@@ -121,9 +121,9 @@ Expected behavior:
 
 - A dedicated CloudStack network is created per cluster using a predefined network offering.
 - Instance offerings are constrained to known sizes (micro, small, medium, large, xlarge, 2xlarge, 4xlarge).
-- Control planes must use at least `large`.
-- Agents must use at least `xlarge`.
-- Agent count must be at least 3; control planes must be 1 or 3.
+- Control planes should use at least `large`.
+- Agents should use at least `xlarge`.
+- Agent count must be at least 4; control planes must be 1 or 3.
 - Instance IPs are allocated by CloudStack; static IPs are not used.
 
 ## Helm Coordination

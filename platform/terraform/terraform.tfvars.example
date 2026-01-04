@@ -7,7 +7,7 @@ cloudstack_secret_key = "CHANGEME"
 cluster_name = "locaweb-lite"
 
 # Control plane
-control_plane_count = 1
+control_plane_count = 3
 control_plane_service_offering = "large"
 
 # API load balancer (always enabled)
@@ -17,7 +17,7 @@ api_lb_allowed_cidrs = ["0.0.0.0/0"]
 ingress_allowed_cidrs = ["0.0.0.0/0"]
 
 # Agents
-agent_count = 3
+agent_count = 4
 agent_service_offering = "xlarge"
 
 # CloudStack resources

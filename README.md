@@ -22,8 +22,8 @@ This repository contains the Locaweb Internal Developer Platform, including clus
 ## CloudStack Constraints
 
 - Per-cluster network is created from a predefined network offering.
-- Control planes require `large` or higher offerings.
-- Agents require `xlarge` or higher offerings and at least 3 nodes.
+- Control planes default to `large`.
+- Agents default to `xlarge` with at least 4 nodes.
 
 ## Getting Started
 

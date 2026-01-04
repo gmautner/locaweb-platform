@@ -5,7 +5,7 @@ variable "cluster_name" {
 
 variable "control_plane_count" {
   type        = number
-  default     = 1
+  default     = 3
   description = "Number of control plane instances."
   validation {
     condition     = contains([1, 3], var.control_plane_count)
@@ -15,11 +15,11 @@ variable "control_plane_count" {
 
 variable "agent_count" {
   type        = number
-  default     = 3
+  default     = 4
   description = "Number of agent instances."
   validation {
-    condition     = var.agent_count >= 3
-    error_message = "agent_count must be at least 3."
+    condition     = var.agent_count >= 4
+    error_message = "agent_count must be at least 4."
   }
 }
 
@@ -229,10 +229,6 @@ variable "cloudstack_offerings" {
   type        = list(string)
   default     = ["micro", "small", "medium", "large", "xlarge", "2xlarge", "4xlarge"]
   description = "Allowed CloudStack service offerings."
-  validation {
-    condition     = contains(var.cloudstack_offerings, "large") && contains(var.cloudstack_offerings, "xlarge")
-    error_message = "cloudstack_offerings must include at least 'large' and 'xlarge'."
-  }
 }
 
 variable "api_lb_allowed_cidrs" {
@@ -249,28 +245,14 @@ variable "ingress_allowed_cidrs" {
 
 variable "control_plane_service_offering" {
   type        = string
+  default     = "large"
   description = "CloudStack service offering for control plane nodes."
-  validation {
-    condition     = contains(var.cloudstack_offerings, var.control_plane_service_offering)
-    error_message = "control_plane_service_offering must be one of the allowed offerings."
-  }
-  validation {
-    condition     = index(var.cloudstack_offerings, var.control_plane_service_offering) >= index(var.cloudstack_offerings, "large")
-    error_message = "control_plane_service_offering must be at least large."
-  }
 }
 
 variable "agent_service_offering" {
   type        = string
+  default     = "xlarge"
   description = "CloudStack service offering for agent nodes."
-  validation {
-    condition     = contains(var.cloudstack_offerings, var.agent_service_offering)
-    error_message = "agent_service_offering must be one of the allowed offerings."
-  }
-  validation {
-    condition     = index(var.cloudstack_offerings, var.agent_service_offering) >= index(var.cloudstack_offerings, "xlarge")
-    error_message = "agent_service_offering must be at least xlarge."
-  }
 }
 
 variable "tags" {
