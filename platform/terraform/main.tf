@@ -1,5 +1,5 @@
 locals {
-  control_plane_ip_effective = try(cloudstack_instance.controlplane[0].ip_address, "")
+  control_plane_ip_effective = cloudstack_instance.controlplane[0].ip_address
 
   k8s_api_endpoint = local.api_lb_ip_address
 
