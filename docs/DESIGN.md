@@ -98,13 +98,78 @@ Expected behavior:
 
 ```
 .
-├── platform/            # Terraform and cluster provisioning
+├── modules/             # Reusable Terraform modules
+│   └── cloudstack-k3s/  # CloudStack k3s cluster module
+├── terraform/           # Terraform root stack (calls modules)
 ├── charts/              # Helm charts for platform and workloads
 ├── blueprints/          # Example blueprints (values)
 ├── schemas/             # JSON schemas for blueprints
 ├── docs/                # Design and operational docs
 └── tools/               # Helper scripts
 ```
+
+## Module Architecture
+
+The cluster provisioning logic is encapsulated in the `modules/cloudstack-k3s` module. This design enables:
+
+- **Reusability:** The module can be called from external repositories.
+- **Consistency:** All clusters share the same provisioning logic.
+- **Customization:** Variables allow per-cluster configuration.
+
+### Module Structure
+
+```
+modules/cloudstack-k3s/
+├── main.tf              # CloudStack infrastructure and k3s provisioning
+├── addons.tf            # Helm releases for required addons
+├── variables.tf         # Input variables
+├── outputs.tf           # Module outputs
+├── versions.tf          # Provider requirements
+└── templates/           # k3s config templates
+```
+
+### Using the Module from This Repository
+
+The `terraform/` directory provides a thin wrapper that calls the module:
+
+```hcl
+module "cluster" {
+  source = "../modules/cloudstack-k3s"
+
+  cluster_name          = var.cluster_name
+  cloudstack_api_key    = var.cloudstack_api_key
+  cloudstack_secret_key = var.cloudstack_secret_key
+  k3s_version           = var.k3s_version
+
+  options  = var.options
+  advanced = var.advanced
+}
+```
+
+### Using the Module from an External Repository
+
+The module can be sourced from a Git URL, enabling clusters to be provisioned from separate repositories:
+
+```hcl
+module "cluster" {
+  source = "git::https://github.com/org/locaweb-platform.git//modules/cloudstack-k3s?ref=v1.0.0"
+
+  cluster_name          = "my-cluster"
+  cloudstack_api_key    = var.cloudstack_api_key
+  cloudstack_secret_key = var.cloudstack_secret_key
+  k3s_version           = "v1.29.6+k3s1"
+
+  options = {
+    agent_count = 6
+  }
+}
+```
+
+When using the module externally:
+
+1. **Charts included:** The module references local Helm charts via a relative path. When sourcing from Git, Terraform downloads the entire repository at the specified ref, so the charts are automatically available.
+2. **Provider configuration:** Configure the `cloudstack` and `helm` providers in your root stack.
+3. **Version pinning:** Use a Git ref (tag or commit) to pin the module version.
 
 ## Tooling Compatibility
 

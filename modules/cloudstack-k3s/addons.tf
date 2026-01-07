@@ -1,23 +1,25 @@
 locals {
-  ingress_proxy_protocol_insecure = var.ingress_proxy_protocol_enabled && length(var.ingress_proxy_protocol_trusted_ips) == 0
+  charts_path = "${path.module}/../../charts"
+
+  ingress_proxy_protocol_insecure = local.ingress_proxy_protocol_enabled && length(local.ingress_proxy_protocol_trusted_ips) == 0
   traefik_values = merge(
     {
       ingressClass = {
         enabled        = true
         isDefaultClass = true
-        name           = var.ingress_class_name
+        name           = local.ingress_class_name
       }
       ports = {
         web = {
           proxyProtocol = {
             insecure   = local.ingress_proxy_protocol_insecure
-            trustedIPs = var.ingress_proxy_protocol_trusted_ips
+            trustedIPs = local.ingress_proxy_protocol_trusted_ips
           }
         }
         websecure = {
           proxyProtocol = {
             insecure   = local.ingress_proxy_protocol_insecure
-            trustedIPs = var.ingress_proxy_protocol_trusted_ips
+            trustedIPs = local.ingress_proxy_protocol_trusted_ips
           }
         }
       }
@@ -70,17 +72,17 @@ resource "helm_release" "cert_manager" {
 
 resource "helm_release" "cert_manager_issuers" {
   name      = "cert-manager-issuers"
-  chart     = "${path.module}/../../charts/cert-manager-issuers"
+  chart     = "${local.charts_path}/cert-manager-issuers"
   namespace = "cert-manager"
 
   create_namespace = false
 
   values = [
     yamlencode({
-      email            = var.cert_manager_email
-      server           = var.cert_manager_acme_server
-      privateKeySecretName = var.cert_manager_private_key_secret_name
-      ingressClassName = var.ingress_class_name
+      email                = var.options.cert_manager_email
+      server               = local.cert_manager_acme_server
+      privateKeySecretName = local.cert_manager_private_key_secret_name
+      ingressClassName     = local.ingress_class_name
     })
   ]
 
@@ -101,18 +103,18 @@ resource "helm_release" "system_upgrade_controller" {
 
 resource "helm_release" "k3s_upgrade_plans" {
   name      = "k3s-upgrade-plans"
-  chart     = "${path.module}/../../charts/k3s-upgrade-plans"
+  chart     = "${local.charts_path}/k3s-upgrade-plans"
   namespace = "system-upgrade"
 
   create_namespace = false
 
   values = [
     yamlencode({
-      k3sVersion                     = var.k3s_version
-      serverConcurrency              = var.k3s_upgrade_server_concurrency
-      agentConcurrency               = var.k3s_upgrade_agent_concurrency
-      drainForce                     = var.k3s_upgrade_drain_force
-      drainSkipWaitForDeleteTimeout  = var.k3s_upgrade_drain_skip_wait_for_delete_timeout
+      k3sVersion                    = var.k3s_version
+      serverConcurrency             = local.k3s_upgrade_server_concurrency
+      agentConcurrency              = local.k3s_upgrade_agent_concurrency
+      drainForce                    = local.k3s_upgrade_drain_force
+      drainSkipWaitForDeleteTimeout = local.k3s_upgrade_drain_skip_wait_for_delete_timeout
     })
   ]
 
@@ -121,14 +123,14 @@ resource "helm_release" "k3s_upgrade_plans" {
 
 resource "helm_release" "cloudstack_ccm" {
   name      = "cloudstack-ccm"
-  chart     = "${path.module}/../../charts/cloudstack-ccm"
+  chart     = "${local.charts_path}/cloudstack-ccm"
   namespace = "cloudstack-system"
 
   create_namespace = true
 
   values = [
     yamlencode({
-      apiUrl    = var.cloudstack_api_url
+      apiUrl    = var.advanced.cloudstack_api_url
       apiKey    = var.cloudstack_api_key
       secretKey = var.cloudstack_secret_key
     })
@@ -139,7 +141,7 @@ resource "helm_release" "cloudstack_ccm" {
 
 resource "helm_release" "cloudstack_csi" {
   name      = "cloudstack-csi"
-  chart     = "${path.module}/../../charts/cloudstack-csi"
+  chart     = "${local.charts_path}/cloudstack-csi"
   namespace = "cloudstack-system"
 
   create_namespace = true
@@ -158,11 +160,11 @@ resource "helm_release" "cilium" {
 
   values = [
     yamlencode({
-      k8sServiceHost                     = local.k8s_api_endpoint
-      k8sServicePort                     = var.k8s_service_port
-      kubeProxyReplacement               = true
+      k8sServiceHost                      = local.k8s_api_endpoint
+      k8sServicePort                      = local.k8s_service_port
+      kubeProxyReplacement                = true
       kubeProxyReplacementHealthzBindAddr = "0.0.0.0:10256"
-      routingMode                        = "tunnel"
+      routingMode                         = "tunnel"
       bpf = {
         policyMapMax = 65536
       }
@@ -256,10 +258,10 @@ resource "helm_release" "kured" {
   values = [
     yamlencode({
       configuration = {
-        startTime = var.kured_start_time
-        endTime   = var.kured_end_time
-        timeZone  = var.kured_time_zone
-        period    = var.kured_period
+        startTime = var.options.kured_start_time
+        endTime   = var.options.kured_end_time
+        timeZone  = var.options.kured_time_zone
+        period    = local.kured_period
       }
       tolerations = [
         {
@@ -315,3 +317,4 @@ resource "helm_release" "k8up" {
 
   depends_on = [helm_release.cilium, terraform_data.k3s_ready]
 }
+

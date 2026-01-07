@@ -1,0 +1,47 @@
+# =============================================================================
+# REQUIRED
+# =============================================================================
+
+cluster_name          = "my-cluster"
+cloudstack_api_key    = "CHANGEME"
+cloudstack_secret_key = "CHANGEME"
+k3s_version           = "v1.29.6+k3s1"
+
+# =============================================================================
+# OPTIONAL
+# Uncomment fields to override defaults.
+# =============================================================================
+
+# options = {
+#   cloudstack_zone        = "ZP01"
+#   control_plane_count    = 3
+#   agent_count            = 4
+#   agent_service_offering = "xlarge"
+#   api_lb_allowed_cidrs   = ["0.0.0.0/0"]
+#   ingress_allowed_cidrs  = ["0.0.0.0/0"]
+#   tags                   = {}
+#   oidc_issuer_url        = ""
+#   oidc_client_id         = ""
+#   oidc_username_claim    = "preferred_username"
+#   cert_manager_email     = "platform@locaweb.com.br"
+#   kured_start_time       = "5:00"
+#   kured_end_time         = "6:59"
+#   kured_time_zone        = "UTC"
+# }
+
+# =============================================================================
+# ADVANCED
+# Don't change these unless you know what you're doing.
+# =============================================================================
+
+# advanced = {
+#   cloudstack_api_url             = "https://painel-cloud.locaweb.com.br/client/api"
+#   cloudstack_template            = "73253685-dcf5-42ec-ad7e-77482fa11e26"
+#   network_cidr                   = "192.168.0.0/21"
+#   network_offering               = "c39d7786-2967-4b18-948e-a97d605cbf89"
+#   network_domain                 = "cluster.local"
+#   control_plane_service_offering = "large"
+#   k3s_arch                       = "amd64"
+#   kubeconfig_output_path         = "/tmp/<cluster_name>-kubeconfig.yaml"
+#   ssh_private_key_path           = "/tmp/<cluster_name>-ssh-key"
+# }

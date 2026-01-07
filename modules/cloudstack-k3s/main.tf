@@ -1,4 +1,46 @@
 locals {
+  # Module-internal defaults (not exposed to callers)
+  control_plane_taints      = ["node-role.kubernetes.io/control-plane=true:NoSchedule", "CriticalAddonsOnly=true:NoExecute"]
+  control_plane_labels      = ["k3s-upgrade=true"]
+  agent_taints              = ["node.cilium.io/agent-not-ready=true:NoExecute"]
+  agent_labels              = ["node-role.kubernetes.io/worker=true", "k3s-upgrade=true"]
+  expunge                   = true
+  ssh_user                  = "root"
+  k3s_install_url           = "https://get.k3s.io"
+  k3s_ready_timeout_minutes = 15
+  k3s_kube_apiserver_args   = ["request-timeout=300s"]
+  disable_components        = ["servicelb", "traefik", "local-storage"]
+  disable_kube_proxy        = true
+  disable_cloud_controller  = true
+  disable_network_policy    = true
+  embedded_registry         = true
+  flannel_backend           = "none"
+
+  # k3s upgrade defaults
+  k3s_upgrade_server_concurrency                 = 1
+  k3s_upgrade_agent_concurrency                  = 2
+  k3s_upgrade_drain_force                        = true
+  k3s_upgrade_drain_skip_wait_for_delete_timeout = 60
+
+  # OIDC defaults
+  oidc_username_prefix = "oidc:"
+
+  # Cilium defaults
+  k8s_service_port = 6443
+
+  # Ingress defaults
+  ingress_class_name                 = "traefik"
+  ingress_proxy_protocol_enabled     = true
+  ingress_proxy_protocol_trusted_ips = []
+
+  # cert-manager defaults
+  cert_manager_acme_server             = "https://acme-v02.api.letsencrypt.org/directory"
+  cert_manager_private_key_secret_name = "letsencrypt-http-prod"
+
+  # kured defaults
+  kured_period = "15m"
+
+  # Computed values
   control_plane_ip_effective = cloudstack_instance.controlplane[0].ip_address
 
   k8s_api_endpoint = local.api_lb_ip_address
@@ -10,29 +52,29 @@ locals {
   ingress_ip_address    = cloudstack_ipaddress.ingress.ip_address
 
   k3s_controlplane_config = templatefile("${path.module}/templates/k3s-controlplane.yaml.tmpl", {
-    k3s_token               = random_password.k3s_token.result
-    control_plane_tls_sans  = [local.k8s_api_endpoint]
-    control_plane_taints    = var.control_plane_taints
-    control_plane_labels    = concat(["cluster=${var.cluster_name}"], var.control_plane_labels)
-    disable_components      = var.disable_components
-    disable_kube_proxy      = var.disable_kube_proxy
-    disable_cloud_controller = var.disable_cloud_controller
-    disable_network_policy  = var.disable_network_policy
-    embedded_registry       = var.embedded_registry
-    flannel_backend         = var.flannel_backend
-    kube_apiserver_args     = local.kube_apiserver_args
+    k3s_token                = random_password.k3s_token.result
+    control_plane_tls_sans   = [local.k8s_api_endpoint]
+    control_plane_taints     = local.control_plane_taints
+    control_plane_labels     = concat(["cluster=${var.cluster_name}"], local.control_plane_labels)
+    disable_components       = local.disable_components
+    disable_kube_proxy       = local.disable_kube_proxy
+    disable_cloud_controller = local.disable_cloud_controller
+    disable_network_policy   = local.disable_network_policy
+    embedded_registry        = local.embedded_registry
+    flannel_backend          = local.flannel_backend
+    kube_apiserver_args      = local.kube_apiserver_args
   })
 
   k3s_agent_config = templatefile("${path.module}/templates/k3s-agent.yaml.tmpl", {
     control_plane_ip = local.k8s_api_endpoint
-    k3s_token         = random_password.k3s_token.result
-    agent_labels      = concat(["cluster=${var.cluster_name}"], var.agent_labels)
-    flannel_backend   = var.flannel_backend
-    agent_taints      = var.agent_taints
+    k3s_token        = random_password.k3s_token.result
+    agent_labels     = concat(["cluster=${var.cluster_name}"], local.agent_labels)
+    flannel_backend  = local.flannel_backend
+    agent_taints     = local.agent_taints
   })
 
-  kubeconfig_path      = var.kubeconfig_output_path != "" ? var.kubeconfig_output_path : "/tmp/${var.cluster_name}-kubeconfig.yaml"
-  ssh_private_key_path = var.ssh_private_key_path != "" ? var.ssh_private_key_path : "/tmp/${var.cluster_name}-ssh-key"
+  kubeconfig_path      = var.advanced.kubeconfig_output_path != "" ? var.advanced.kubeconfig_output_path : "/tmp/${var.cluster_name}-kubeconfig.yaml"
+  ssh_private_key_path = var.advanced.ssh_private_key_path != "" ? var.advanced.ssh_private_key_path : "/tmp/${var.cluster_name}-ssh-key"
 
   k3s_artifacts_dir  = "/tmp/${var.cluster_name}-k3s-artifacts"
   k3s_install_script = "${local.k3s_artifacts_dir}/k3s-install.sh"
@@ -40,18 +82,18 @@ locals {
     amd64 = "k3s"
     arm64 = "k3s-arm64"
     arm   = "k3s-armhf"
-  }, var.k3s_arch, "k3s")
-  k3s_binary_path  = "${local.k3s_artifacts_dir}/${local.k3s_binary_name}"
-  k3s_images_name  = "k3s-airgap-images-${var.k3s_arch}.tar"
-  k3s_images_path  = "${local.k3s_artifacts_dir}/${local.k3s_images_name}"
+  }, var.advanced.k3s_arch, "k3s")
+  k3s_binary_path = "${local.k3s_artifacts_dir}/${local.k3s_binary_name}"
+  k3s_images_name = "k3s-airgap-images-${var.advanced.k3s_arch}.tar"
+  k3s_images_path = "${local.k3s_artifacts_dir}/${local.k3s_images_name}"
 
   kube_apiserver_args = concat(
-    var.k3s_kube_apiserver_args,
-    var.oidc_issuer_url != "" && var.oidc_client_id != "" ? [
-      "oidc-issuer-url=${var.oidc_issuer_url}",
-      "oidc-client-id=${var.oidc_client_id}",
-      "oidc-username-claim=${var.oidc_username_claim}",
-      "oidc-username-prefix=${var.oidc_username_prefix}"
+    local.k3s_kube_apiserver_args,
+    var.options.oidc_issuer_url != "" && var.options.oidc_client_id != "" ? [
+      "oidc-issuer-url=${var.options.oidc_issuer_url}",
+      "oidc-client-id=${var.options.oidc_client_id}",
+      "oidc-username-claim=${var.options.oidc_username_claim}",
+      "oidc-username-prefix=${local.oidc_username_prefix}"
     ] : []
   )
 }
@@ -81,29 +123,29 @@ resource "cloudstack_ssh_keypair" "cluster" {
 
 resource "cloudstack_network" "cluster" {
   name             = var.cluster_name
-  cidr             = var.network_cidr
-  network_offering = var.network_offering
-  zone             = var.cloudstack_zone
-  network_domain   = var.network_domain
+  cidr             = var.advanced.network_cidr
+  network_offering = var.advanced.network_offering
+  zone             = var.options.cloudstack_zone
+  network_domain   = var.advanced.network_domain
   source_nat_ip    = true
-  tags             = var.tags
+  tags             = var.options.tags
 }
 
 resource "cloudstack_ipaddress" "api_lb" {
-  zone = var.cloudstack_zone
-  network_id  = cloudstack_network.cluster.id
+  zone       = var.options.cloudstack_zone
+  network_id = cloudstack_network.cluster.id
 }
 
 resource "cloudstack_ipaddress" "ingress" {
-  zone = var.cloudstack_zone
-  network_id  = cloudstack_network.cluster.id
+  zone       = var.options.cloudstack_zone
+  network_id = cloudstack_network.cluster.id
 }
 
 resource "cloudstack_firewall" "api_lb" {
   ip_address_id = local.api_lb_ip_address_id
 
   rule {
-    cidr_list = var.api_lb_allowed_cidrs
+    cidr_list = var.options.api_lb_allowed_cidrs
     protocol  = "tcp"
     ports     = ["6443"]
   }
@@ -113,7 +155,7 @@ resource "cloudstack_firewall" "ingress" {
   ip_address_id = local.ingress_ip_address_id
 
   rule {
-    cidr_list = var.ingress_allowed_cidrs
+    cidr_list = var.options.ingress_allowed_cidrs
     protocol  = "tcp"
     ports     = ["80", "443"]
   }
@@ -131,17 +173,17 @@ resource "cloudstack_loadbalancer_rule" "api_lb" {
 }
 
 resource "cloudstack_instance" "controlplane" {
-  count = var.control_plane_count
+  count = var.options.control_plane_count
 
   name             = "${var.cluster_name}-cp-${count.index + 1}"
-  service_offering = var.control_plane_service_offering
-  template         = var.cloudstack_template
-  zone             = var.cloudstack_zone
+  service_offering = var.advanced.control_plane_service_offering
+  template         = var.advanced.cloudstack_template
+  zone             = var.options.cloudstack_zone
   network_id       = cloudstack_network.cluster.id
-  expunge          = var.expunge
+  expunge          = local.expunge
   keypair          = cloudstack_ssh_keypair.cluster.name
   tags = merge(
-    var.tags,
+    var.options.tags,
     {
       cluster = var.cluster_name
       role    = "controlplane"
@@ -150,17 +192,17 @@ resource "cloudstack_instance" "controlplane" {
 }
 
 resource "cloudstack_instance" "agent" {
-  count = var.agent_count
+  count = var.options.agent_count
 
   name             = "${var.cluster_name}-worker-${count.index + 1}"
-  service_offering = var.agent_service_offering
-  template         = var.cloudstack_template
-  zone             = var.cloudstack_zone
+  service_offering = var.options.agent_service_offering
+  template         = var.advanced.cloudstack_template
+  zone             = var.options.cloudstack_zone
   network_id       = cloudstack_network.cluster.id
-  expunge          = var.expunge
+  expunge          = local.expunge
   keypair          = cloudstack_ssh_keypair.cluster.name
   tags = merge(
-    var.tags,
+    var.options.tags,
     {
       cluster = var.cluster_name
       role    = "worker"
@@ -171,16 +213,16 @@ resource "cloudstack_instance" "agent" {
 resource "terraform_data" "k3s_artifacts" {
   triggers_replace = {
     k3s_version = var.k3s_version
-    k3s_arch    = var.k3s_arch
+    k3s_arch    = var.advanced.k3s_arch
   }
 
   provisioner "local-exec" {
     interpreter = ["/bin/bash", "-c"]
-    command = <<EOT
+    command     = <<EOT
       set -e
 
       mkdir -p "${local.k3s_artifacts_dir}"
-      curl -fsSL "${var.k3s_install_url}" -o "${local.k3s_install_script}"
+      curl -fsSL "${local.k3s_install_url}" -o "${local.k3s_install_script}"
       curl -fsSL "https://github.com/k3s-io/k3s/releases/download/${var.k3s_version}/${local.k3s_binary_name}" -o "${local.k3s_binary_path}"
       curl -fsSL "https://github.com/k3s-io/k3s/releases/download/${var.k3s_version}/${local.k3s_images_name}" -o "${local.k3s_images_path}"
       chmod +x "${local.k3s_install_script}"
@@ -193,7 +235,7 @@ resource "terraform_data" "k3s_upload_controlplane" {
 
   triggers_replace = {
     k3s_version = var.k3s_version
-    k3s_arch    = var.k3s_arch
+    k3s_arch    = var.advanced.k3s_arch
   }
 
   depends_on = [
@@ -204,7 +246,7 @@ resource "terraform_data" "k3s_upload_controlplane" {
 
   connection {
     type        = "ssh"
-    user        = var.ssh_user
+    user        = local.ssh_user
     host        = each.value.ip_address
     private_key = tls_private_key.ssh_key.private_key_openssh
   }
@@ -247,7 +289,7 @@ resource "terraform_data" "k3s_upload_agent" {
 
   triggers_replace = {
     k3s_version = var.k3s_version
-    k3s_arch    = var.k3s_arch
+    k3s_arch    = var.advanced.k3s_arch
   }
 
   depends_on = [
@@ -259,7 +301,7 @@ resource "terraform_data" "k3s_upload_agent" {
 
   connection {
     type        = "ssh"
-    user        = var.ssh_user
+    user        = local.ssh_user
     host        = each.value.ip_address
     private_key = tls_private_key.ssh_key.private_key_openssh
   }
@@ -306,7 +348,7 @@ resource "terraform_data" "k3s_kubeconfig" {
 
   provisioner "local-exec" {
     interpreter = ["/bin/bash", "-c"]
-    command = <<EOT
+    command     = <<EOT
       set -e
 
       SSH_OPTS="-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null"
@@ -314,13 +356,13 @@ resource "terraform_data" "k3s_kubeconfig" {
       HOST="${local.control_plane_ip_effective}"
 
       for i in $(seq 1 60); do
-        if ssh $SSH_OPTS -i "$KEY_FILE" "${var.ssh_user}@${HOST}" "test -f /etc/rancher/k3s/k3s.yaml"; then
+        if ssh $SSH_OPTS -i "$KEY_FILE" "${local.ssh_user}@${HOST}" "test -f /etc/rancher/k3s/k3s.yaml"; then
           break
         fi
         sleep 10
       done
 
-      ssh $SSH_OPTS -i "$KEY_FILE" "${var.ssh_user}@${HOST}" "sudo cat /etc/rancher/k3s/k3s.yaml" | \\
+      ssh $SSH_OPTS -i "$KEY_FILE" "${local.ssh_user}@${HOST}" "sudo cat /etc/rancher/k3s/k3s.yaml" | \
         sed "s/127.0.0.1/${local.k8s_api_endpoint}/g" > "${local.kubeconfig_path}"
     EOT
   }
@@ -337,12 +379,12 @@ resource "terraform_data" "k3s_ready" {
 
   provisioner "local-exec" {
     interpreter = ["/bin/bash", "-c"]
-    command = <<EOT
+    command     = <<EOT
       set -e
 
       export KUBECONFIG="${local.kubeconfig_path}"
-      EXPECTED=$(( ${var.control_plane_count} + ${var.agent_count} ))
-      TIMEOUT_SEC=$(( ${var.k3s_ready_timeout_minutes} * 60 ))
+      EXPECTED=$(( ${var.options.control_plane_count} + ${var.options.agent_count} ))
+      TIMEOUT_SEC=$(( ${local.k3s_ready_timeout_minutes} * 60 ))
       START_TS=$(date +%s)
 
       if ! command -v jq >/dev/null 2>&1; then
