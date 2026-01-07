@@ -1,3 +1,8 @@
+output "cluster_name" {
+  value       = local.cluster_name
+  description = "Generated cluster name (slug + random suffix)."
+}
+
 output "control_plane_instance_ids" {
   value       = [for instance in cloudstack_instance.controlplane : instance.id]
   description = "CloudStack instance IDs for control plane nodes."

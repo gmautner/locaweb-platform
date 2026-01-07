@@ -1,4 +1,7 @@
 locals {
+  # Computed cluster name from slug + random suffix
+  cluster_name = "${var.cluster_prefix}-${random_string.cluster_suffix.result}"
+
   # Module-internal defaults (not exposed to callers)
   control_plane_taints      = ["node-role.kubernetes.io/control-plane=true:NoSchedule", "CriticalAddonsOnly=true:NoExecute"]
   control_plane_labels      = ["k3s-upgrade=true"]
@@ -55,7 +58,7 @@ locals {
     k3s_token                = random_password.k3s_token.result
     control_plane_tls_sans   = [local.k8s_api_endpoint]
     control_plane_taints     = local.control_plane_taints
-    control_plane_labels     = concat(["cluster=${var.cluster_name}"], local.control_plane_labels)
+    control_plane_labels     = concat(["cluster=${local.cluster_name}"], local.control_plane_labels)
     disable_components       = local.disable_components
     disable_kube_proxy       = local.disable_kube_proxy
     disable_cloud_controller = local.disable_cloud_controller
@@ -68,15 +71,15 @@ locals {
   k3s_agent_config = templatefile("${path.module}/templates/k3s-agent.yaml.tmpl", {
     control_plane_ip = local.k8s_api_endpoint
     k3s_token        = random_password.k3s_token.result
-    agent_labels     = concat(["cluster=${var.cluster_name}"], local.agent_labels)
+    agent_labels     = concat(["cluster=${local.cluster_name}"], local.agent_labels)
     flannel_backend  = local.flannel_backend
     agent_taints     = local.agent_taints
   })
 
-  kubeconfig_path      = var.advanced.kubeconfig_output_path != "" ? var.advanced.kubeconfig_output_path : "/tmp/${var.cluster_name}-kubeconfig.yaml"
-  ssh_private_key_path = var.advanced.ssh_private_key_path != "" ? var.advanced.ssh_private_key_path : "/tmp/${var.cluster_name}-ssh-key"
+  kubeconfig_path      = var.advanced.kubeconfig_output_path != "" ? var.advanced.kubeconfig_output_path : "/tmp/${local.cluster_name}-kubeconfig.yaml"
+  ssh_private_key_path = var.advanced.ssh_private_key_path != "" ? var.advanced.ssh_private_key_path : "/tmp/${local.cluster_name}-ssh-key"
 
-  k3s_artifacts_dir  = "/tmp/${var.cluster_name}-k3s-artifacts"
+  k3s_artifacts_dir  = "/tmp/${local.cluster_name}-k3s-artifacts"
   k3s_install_script = "${local.k3s_artifacts_dir}/k3s-install.sh"
   k3s_binary_name = lookup({
     amd64 = "k3s"
@@ -98,6 +101,14 @@ locals {
   )
 }
 
+resource "random_string" "cluster_suffix" {
+  length  = 8
+  special = false
+  upper   = false
+  lower   = true
+  numeric = true
+}
+
 resource "random_password" "k3s_token" {
   length  = 32
   special = false
@@ -117,12 +128,12 @@ resource "local_file" "ssh_private_key" {
 }
 
 resource "cloudstack_ssh_keypair" "cluster" {
-  name       = var.cluster_name
+  name       = local.cluster_name
   public_key = tls_private_key.ssh_key.public_key_openssh
 }
 
 resource "cloudstack_network" "cluster" {
-  name             = var.cluster_name
+  name             = local.cluster_name
   cidr             = var.advanced.network_cidr
   network_offering = var.advanced.network_offering
   zone             = var.options.cloudstack_zone
@@ -162,7 +173,7 @@ resource "cloudstack_firewall" "ingress" {
 }
 
 resource "cloudstack_loadbalancer_rule" "api_lb" {
-  name          = "${var.cluster_name}-kubeapi"
+  name          = "${local.cluster_name}-kubeapi"
   ip_address_id = local.api_lb_ip_address_id
   network_id    = cloudstack_network.cluster.id
   algorithm     = "roundrobin"
@@ -175,7 +186,7 @@ resource "cloudstack_loadbalancer_rule" "api_lb" {
 resource "cloudstack_instance" "controlplane" {
   count = var.options.control_plane_count
 
-  name             = "${var.cluster_name}-cp-${count.index + 1}"
+  name             = "${local.cluster_name}-cp-${count.index + 1}"
   service_offering = var.advanced.control_plane_service_offering
   template         = var.advanced.cloudstack_template
   zone             = var.options.cloudstack_zone
@@ -185,7 +196,7 @@ resource "cloudstack_instance" "controlplane" {
   tags = merge(
     var.options.tags,
     {
-      cluster = var.cluster_name
+      cluster = local.cluster_name
       role    = "controlplane"
     }
   )
@@ -194,7 +205,7 @@ resource "cloudstack_instance" "controlplane" {
 resource "cloudstack_instance" "agent" {
   count = var.options.agent_count
 
-  name             = "${var.cluster_name}-worker-${count.index + 1}"
+  name             = "${local.cluster_name}-worker-${count.index + 1}"
   service_offering = var.options.agent_service_offering
   template         = var.advanced.cloudstack_template
   zone             = var.options.cloudstack_zone
@@ -204,7 +215,7 @@ resource "cloudstack_instance" "agent" {
   tags = merge(
     var.options.tags,
     {
-      cluster = var.cluster_name
+      cluster = local.cluster_name
       role    = "worker"
     }
   )

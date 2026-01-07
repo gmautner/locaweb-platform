@@ -1,3 +1,8 @@
+output "cluster_name" {
+  value       = module.cluster.cluster_name
+  description = "Generated cluster name (slug + random suffix)."
+}
+
 output "control_plane_instance_ids" {
   value       = module.cluster.control_plane_instance_ids
   description = "CloudStack instance IDs for control plane nodes."

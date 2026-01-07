@@ -2,9 +2,9 @@
 # REQUIRED VARIABLES
 # =============================================================================
 
-variable "cluster_name" {
+variable "cluster_prefix" {
   type        = string
-  description = "Cluster name used for tagging and labeling."
+  description = "Cluster prefix used to generate the cluster name with a random suffix."
 }
 
 variable "cloudstack_api_key" {

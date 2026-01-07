@@ -1,5 +1,5 @@
 # Required
-variable "cluster_name" {
+variable "cluster_prefix" {
   type = string
 }
 
