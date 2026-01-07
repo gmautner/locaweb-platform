@@ -6,7 +6,8 @@ This repository contains the Locaweb Internal Developer Platform, including clus
 
 ## Layout
 
-- `platform/` Terraform for CloudStack provisioning and cluster bootstrap
+- `terraform/` Terraform root stack for cluster provisioning
+- `modules/` Reusable Terraform modules (e.g., `cloudstack-k3s`)
 - `charts/` Helm charts for platform and workloads
 - `blueprints/` Example application blueprints
 - `schemas/` JSON schemas for blueprint values
@@ -28,8 +29,28 @@ This repository contains the Locaweb Internal Developer Platform, including clus
 ## Getting Started
 
 1. Review `docs/DESIGN.md` for architecture and requirements.
-2. Use `platform/terraform/terraform.tfvars.example` as a starting point for configuration.
-3. Run Terraform or OpenTofu to provision the cluster.
+2. Copy `terraform/terraform.tfvars.example` to `terraform/terraform.tfvars` and customize.
+3. Provide sensitive inputs via environment variables:
+   ```bash
+   export TF_VAR_cloudstack_api_key="your-api-key"
+   export TF_VAR_cloudstack_secret_key="your-secret-key"
+   ```
+4. Run Terraform or OpenTofu to provision the cluster:
+   ```bash
+   cd terraform
+   terraform init
+   terraform plan
+   terraform apply
+   ```
+
+## Sensitive Variables
+
+Sensitive inputs (API keys, secrets) must be provided via `TF_VAR_*` environment variables rather than in `.tfvars` files. This prevents accidental commits of credentials to version control.
+
+| Variable | Environment Variable |
+|----------|---------------------|
+| `cloudstack_api_key` | `TF_VAR_cloudstack_api_key` |
+| `cloudstack_secret_key` | `TF_VAR_cloudstack_secret_key` |
 
 ## CI and Module Usage
 

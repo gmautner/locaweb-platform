@@ -146,6 +146,15 @@ module "cluster" {
 }
 ```
 
+**Sensitive variables** (`cloudstack_api_key`, `cloudstack_secret_key`) should be provided via environment variables to avoid committing secrets to version control:
+
+```bash
+export TF_VAR_cloudstack_api_key="your-api-key"
+export TF_VAR_cloudstack_secret_key="your-secret-key"
+terraform plan
+terraform apply
+```
+
 ### Using the Module from an External Repository
 
 The module can be sourced from a Git URL, enabling clusters to be provisioned from separate repositories:
@@ -200,7 +209,26 @@ Terraform generates a kubeconfig from the control plane and uses it for Helm rel
 - Terraform fetches kubeconfig over SSH and uses it for Helm installs.
 - Terraform waits for all nodes (control planes + agents) to be Ready before installing addons.
 
-## Sensitive Artifacts Handling
+## Sensitive Inputs and Artifacts Handling
+
+### Sensitive Inputs (API Keys)
+
+Sensitive Terraform variables must be provided via environment variables rather than `.tfvars` files:
+
+```bash
+export TF_VAR_cloudstack_api_key="your-api-key"
+export TF_VAR_cloudstack_secret_key="your-secret-key"
+```
+
+This approach:
+
+- Prevents accidental commits of secrets to version control.
+- Works consistently across local development and CI/CD pipelines.
+- Allows secrets to be injected from external sources (Vault, CI secrets, etc.).
+
+The `terraform.tfvars` file is excluded via `.gitignore` as an additional safeguard.
+
+### Sensitive Outputs (Kubeconfig, SSH Keys)
 
 The default flow writes generated kubeconfig and SSH key material locally. This is convenient but has risks:
 

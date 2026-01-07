@@ -1,0 +1,32 @@
+# Terraform state and sensitive files
+*.tfstate
+*.tfstate.*
+.terraform/
+.terraform.lock.hcl
+crash.log
+crash.*.log
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
+
+# Sensitive variable files (use TF_VAR_* environment variables instead)
+terraform.tfvars
+*.auto.tfvars
+
+# Generated artifacts
+*-kubeconfig.yaml
+*-ssh-key
+*-ssh-key.pub
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE files
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
