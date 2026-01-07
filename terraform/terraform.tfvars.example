@@ -6,6 +6,7 @@ cluster_prefix        = "my-cluster"
 cloudstack_api_key    = "CHANGEME"
 cloudstack_secret_key = "CHANGEME"
 k3s_version           = "v1.29.6+k3s1"
+base_domain           = "k8s.example.com"
 
 # =============================================================================
 # OPTIONAL

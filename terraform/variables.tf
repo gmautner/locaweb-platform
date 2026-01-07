@@ -17,6 +17,10 @@ variable "k3s_version" {
   type = string
 }
 
+variable "base_domain" {
+  type = string
+}
+
 # Optional
 variable "options" {
   default = {}

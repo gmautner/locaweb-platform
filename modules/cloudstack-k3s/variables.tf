@@ -28,6 +28,15 @@ variable "k3s_version" {
   }
 }
 
+variable "base_domain" {
+  type        = string
+  description = "Base domain under which endpoints for externally accessible services will be created. Must be a DNS zone under your control."
+  validation {
+    condition     = can(regex("^[a-z0-9]([a-z0-9-]*[a-z0-9])?(\\.[a-z0-9]([a-z0-9-]*[a-z0-9])?)+$", var.base_domain))
+    error_message = "base_domain must be a valid domain name (e.g., example.com or k8s.example.com)."
+  }
+}
+
 # =============================================================================
 # OPTIONAL VARIABLES
 # =============================================================================
