@@ -1,93 +1,30 @@
 locals {
   charts_path = "${path.module}/../../charts"
-
-  ingress_proxy_protocol_insecure = local.ingress_proxy_protocol_enabled && length(local.ingress_proxy_protocol_trusted_ips) == 0
-  traefik_values = merge(
-    {
-      ingressClass = {
-        enabled        = true
-        isDefaultClass = true
-        name           = local.ingress_class_name
-      }
-      ports = {
-        web = {
-          proxyProtocol = {
-            insecure   = local.ingress_proxy_protocol_insecure
-            trustedIPs = local.ingress_proxy_protocol_trusted_ips
-          }
-        }
-        websecure = {
-          proxyProtocol = {
-            insecure   = local.ingress_proxy_protocol_insecure
-            trustedIPs = local.ingress_proxy_protocol_trusted_ips
-          }
-        }
-      }
-      service = {
-        type = "LoadBalancer"
-      }
-    },
-    {
-      service = {
-        type = "LoadBalancer"
-        spec = {
-          loadBalancerIP = local.ingress_ip_address
-        }
-      }
-    }
-  )
 }
 
-resource "helm_release" "traefik" {
-  name       = "traefik"
-  repository = "https://traefik.github.io/charts"
-  chart      = "traefik"
-  version    = "~> 38.0.1"
-  namespace  = "traefik"
+# =============================================================================
+# COMMON ADDONS (traefik, cert-manager, k8up)
+# =============================================================================
 
-  create_namespace = true
+module "common" {
+  source = "../common"
 
-  values = [yamlencode(local.traefik_values)]
+  charts_path        = local.charts_path
+  cert_manager_email = var.options.cert_manager_email
 
-  depends_on = [helm_release.cilium, terraform_data.k3s_ready]
+  ingress_class_name                   = local.ingress_class_name
+  ingress_ip_address                   = local.ingress_ip_address
+  ingress_proxy_protocol_enabled       = local.ingress_proxy_protocol_enabled
+  ingress_proxy_protocol_trusted_ips   = local.ingress_proxy_protocol_trusted_ips
+  cert_manager_acme_server             = local.cert_manager_acme_server
+  cert_manager_private_key_secret_name = local.cert_manager_private_key_secret_name
+
+  depends_on = [terraform_data.k3s_ready, helm_release.cloudstack_ccm, helm_release.cloudstack_csi]
 }
 
-resource "helm_release" "cert_manager" {
-  name       = "cert-manager"
-  repository = "https://charts.jetstack.io"
-  chart      = "cert-manager"
-  version    = "~> 1.19.2"
-  namespace  = "cert-manager"
-
-  create_namespace = true
-
-  values = [
-    yamlencode({
-      installCRDs = true
-    })
-  ]
-
-  depends_on = [helm_release.cilium, terraform_data.k3s_ready]
-}
-
-resource "helm_release" "cert_manager_issuers" {
-  name      = "cert-manager-issuers"
-  chart     = "${local.charts_path}/cert-manager-issuers"
-  namespace = "cert-manager"
-
-  create_namespace = false
-
-  values = [
-    yamlencode({
-      email                = var.options.cert_manager_email
-      server               = local.cert_manager_acme_server
-      privateKeySecretName = local.cert_manager_private_key_secret_name
-      ingressClassName     = local.ingress_class_name
-    })
-  ]
-
-  depends_on = [helm_release.cert_manager, terraform_data.k3s_ready]
-}
+# =============================================================================
+# K3S-SPECIFIC ADDONS
+# =============================================================================
 
 resource "helm_release" "system_upgrade_controller" {
   name       = "system-upgrade-controller"
@@ -120,6 +57,10 @@ resource "helm_release" "k3s_upgrade_plans" {
 
   depends_on = [helm_release.system_upgrade_controller, terraform_data.k3s_ready]
 }
+
+# =============================================================================
+# CLOUDSTACK-SPECIFIC ADDONS
+# =============================================================================
 
 resource "helm_release" "cloudstack_ccm" {
   name      = "cloudstack-ccm"
@@ -288,33 +229,3 @@ resource "helm_release" "kured" {
 
   depends_on = [helm_release.cilium, terraform_data.k3s_ready]
 }
-
-resource "helm_release" "k8up" {
-  name       = "k8up"
-  repository = "https://k8up-io.github.io/k8up"
-  chart      = "k8up"
-  version    = "~> 4.8.6"
-  namespace  = "k8up"
-
-  create_namespace = true
-
-  values = [
-    yamlencode({
-      k8up = {
-        timezone = "UTC"
-      }
-      resources = {
-        requests = {
-          cpu    = "20m"
-          memory = "128Mi"
-        }
-        limits = {
-          memory = "256Mi"
-        }
-      }
-    })
-  ]
-
-  depends_on = [helm_release.cilium, terraform_data.k3s_ready]
-}
-
