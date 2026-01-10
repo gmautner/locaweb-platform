@@ -1,4 +1,8 @@
 locals {
+  # cert-manager defaults (internal to this module)
+  cert_manager_acme_server             = "https://acme-v02.api.letsencrypt.org/directory"
+  cert_manager_private_key_secret_name = "letsencrypt-http-prod"
+
   ingress_proxy_protocol_insecure = var.ingress_proxy_protocol_enabled && length(var.ingress_proxy_protocol_trusted_ips) == 0
 
   traefik_values = merge(
@@ -75,8 +79,8 @@ resource "helm_release" "cert_manager_issuers" {
   values = [
     yamlencode({
       email                = var.cert_manager_email
-      server               = var.cert_manager_acme_server
-      privateKeySecretName = var.cert_manager_private_key_secret_name
+      server               = local.cert_manager_acme_server
+      privateKeySecretName = local.cert_manager_private_key_secret_name
       ingressClassName     = var.ingress_class_name
     })
   ]

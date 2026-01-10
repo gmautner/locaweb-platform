@@ -12,12 +12,10 @@ module "common" {
   charts_path        = local.charts_path
   cert_manager_email = var.options.cert_manager_email
 
-  ingress_class_name                   = local.ingress_class_name
-  ingress_ip_address                   = local.ingress_ip_address
-  ingress_proxy_protocol_enabled       = local.ingress_proxy_protocol_enabled
-  ingress_proxy_protocol_trusted_ips   = local.ingress_proxy_protocol_trusted_ips
-  cert_manager_acme_server             = local.cert_manager_acme_server
-  cert_manager_private_key_secret_name = local.cert_manager_private_key_secret_name
+  ingress_class_name                 = local.ingress_class_name
+  ingress_ip_address                 = local.ingress_ip_address
+  ingress_proxy_protocol_enabled     = local.ingress_proxy_protocol_enabled
+  ingress_proxy_protocol_trusted_ips = local.ingress_proxy_protocol_trusted_ips
 
   depends_on = [terraform_data.k3s_ready, helm_release.cloudstack_ccm, helm_release.cloudstack_csi]
 }

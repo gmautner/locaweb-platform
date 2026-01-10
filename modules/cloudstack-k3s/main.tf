@@ -36,10 +36,6 @@ locals {
   ingress_proxy_protocol_enabled     = true
   ingress_proxy_protocol_trusted_ips = []
 
-  # cert-manager defaults
-  cert_manager_acme_server             = "https://acme-v02.api.letsencrypt.org/directory"
-  cert_manager_private_key_secret_name = "letsencrypt-http-prod"
-
   # kured defaults
   kured_period = "15m"
 

@@ -40,18 +40,6 @@ variable "ingress_proxy_protocol_trusted_ips" {
   description = "List of trusted IPs for PROXY protocol. Empty list enables insecure mode."
 }
 
-variable "cert_manager_acme_server" {
-  type        = string
-  default     = "https://acme-v02.api.letsencrypt.org/directory"
-  description = "ACME server URL for cert-manager."
-}
-
-variable "cert_manager_private_key_secret_name" {
-  type        = string
-  default     = "letsencrypt-http-prod"
-  description = "Name of the Kubernetes secret for the ACME private key."
-}
-
 variable "k8up_timezone" {
   type        = string
   default     = "UTC"
