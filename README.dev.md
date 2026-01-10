@@ -18,6 +18,7 @@ This repository contains the Locaweb Internal Developer Platform, including clus
 
 - Terraform/OpenTofu: `~> 1.6.0`
 - CloudStack provider: `~> 0.5.0`
+- AWS provider: `~> 6.28.0`
 - Local tools: `curl`, `jq`, `kubectl`, `ssh`
 
 ## CloudStack Constraints
@@ -31,11 +32,16 @@ This repository contains the Locaweb Internal Developer Platform, including clus
 1. Review `docs/DESIGN.md` for architecture and requirements.
 2. Copy `terraform/terraform.tfvars.example` to `terraform/terraform.tfvars` and customize.
 3. Provide sensitive inputs via environment variables:
+
    ```bash
    export TF_VAR_cloudstack_api_key="your-api-key"
    export TF_VAR_cloudstack_secret_key="your-secret-key"
+   export TF_VAR_aws_access_key="your-aws-access-key"
+   export TF_VAR_aws_secret_key="your-aws-secret-key"
    ```
+
 4. Run Terraform or OpenTofu to provision the cluster:
+
    ```bash
    cd terraform
    terraform init
@@ -47,10 +53,12 @@ This repository contains the Locaweb Internal Developer Platform, including clus
 
 Sensitive inputs (API keys, secrets) must be provided via `TF_VAR_*` environment variables rather than in `.tfvars` files. This prevents accidental commits of credentials to version control.
 
-| Variable | Environment Variable |
-|----------|---------------------|
-| `cloudstack_api_key` | `TF_VAR_cloudstack_api_key` |
-| `cloudstack_secret_key` | `TF_VAR_cloudstack_secret_key` |
+| Variable | Environment Variable | Purpose |
+| -------- | ------------------- | ------- |
+| `cloudstack_api_key` | `TF_VAR_cloudstack_api_key` | CloudStack API authentication |
+| `cloudstack_secret_key` | `TF_VAR_cloudstack_secret_key` | CloudStack API authentication |
+| `aws_access_key` | `TF_VAR_aws_access_key` | AWS DR infrastructure (backup buckets, secrets) and optional EKS clusters |
+| `aws_secret_key` | `TF_VAR_aws_secret_key` | AWS DR infrastructure (backup buckets, secrets) and optional EKS clusters |
 
 ## CI and Module Usage
 
@@ -66,4 +74,3 @@ K3s upgrades are handled by system-upgrade-controller with plans in `charts/k3s-
 ## k3s Airgap Install
 
 k3s artifacts are downloaded once on the Terraform host and uploaded to nodes before install.
-

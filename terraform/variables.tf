@@ -13,6 +13,16 @@ variable "cloudstack_secret_key" {
   sensitive = true
 }
 
+variable "aws_access_key" {
+  type      = string
+  sensitive = true
+}
+
+variable "aws_secret_key" {
+  type      = string
+  sensitive = true
+}
+
 variable "k3s_version" {
   type = string
 }
