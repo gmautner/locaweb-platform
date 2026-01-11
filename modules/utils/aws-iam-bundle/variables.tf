@@ -2,13 +2,13 @@
 # REQUIRED VARIABLES
 # =============================================================================
 
-variable "user_name" {
+variable "name" {
   type        = string
-  description = "Name of the IAM user to create."
+  description = "Name of the IAM user and role to create."
 
   validation {
-    condition     = can(regex("^[a-zA-Z0-9+=,.@_-]+$", var.user_name))
-    error_message = "user_name must contain only alphanumeric characters and the following: +=,.@_-"
+    condition     = can(regex("^[a-zA-Z0-9+=,.@_-]+$", var.name))
+    error_message = "name must contain only alphanumeric characters and the following: +=,.@_-"
   }
 }
 
