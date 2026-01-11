@@ -31,13 +31,17 @@ This repository contains the Locaweb Internal Developer Platform, including clus
 
 1. Review `docs/DESIGN.md` for architecture and requirements.
 2. Copy `terraform/terraform.tfvars.example` to `terraform/terraform.tfvars` and customize.
-3. Provide sensitive inputs via environment variables:
+3. Set environment variables for provider authentication:
 
    ```bash
-   export TF_VAR_cloudstack_api_key="your-api-key"
-   export TF_VAR_cloudstack_secret_key="your-secret-key"
-   export TF_VAR_aws_access_key="your-aws-access-key"
-   export TF_VAR_aws_secret_key="your-aws-secret-key"
+   # CloudStack provider
+   export CLOUDSTACK_API_URL="https://painel-cloud.locaweb.com.br/client/api"
+   export CLOUDSTACK_API_KEY="your-api-key"
+   export CLOUDSTACK_SECRET_KEY="your-secret-key"
+
+   # AWS provider
+   export AWS_ACCESS_KEY_ID="your-aws-access-key-id"
+   export AWS_SECRET_ACCESS_KEY="your-aws-secret-access-key"
    ```
 
 4. Run Terraform or OpenTofu to provision the cluster:
@@ -45,20 +49,42 @@ This repository contains the Locaweb Internal Developer Platform, including clus
    ```bash
    cd terraform
    terraform init
-   terraform plan
-   terraform apply
+   terraform plan \
+     -var="cloudstack_ccm_api_key=your-ccm-api-key" \
+     -var="cloudstack_ccm_secret_key=your-ccm-secret-key"
+   terraform apply \
+     -var="cloudstack_ccm_api_key=your-ccm-api-key" \
+     -var="cloudstack_ccm_secret_key=your-ccm-secret-key"
    ```
 
-## Sensitive Variables
+## Credential Management
 
-Sensitive inputs (API keys, secrets) must be provided via `TF_VAR_*` environment variables rather than in `.tfvars` files. This prevents accidental commits of credentials to version control.
+### Provider Credentials (Environment Variables)
 
-| Variable | Environment Variable | Purpose |
-| -------- | ------------------- | ------- |
-| `cloudstack_api_key` | `TF_VAR_cloudstack_api_key` | CloudStack API authentication |
-| `cloudstack_secret_key` | `TF_VAR_cloudstack_secret_key` | CloudStack API authentication |
-| `aws_access_key` | `TF_VAR_aws_access_key` | AWS DR infrastructure (backup buckets, secrets) and optional EKS clusters |
-| `aws_secret_key` | `TF_VAR_aws_secret_key` | AWS DR infrastructure (backup buckets, secrets) and optional EKS clusters |
+Provider credentials are read from standard environment variables. This approach:
+
+- Leverages native provider authentication mechanisms.
+- Works consistently across local development and CI/CD pipelines.
+- Allows credentials to be injected from external sources (Vault, CI secrets, etc.).
+
+| Provider    | Environment Variable       | Purpose                          |
+| ----------- | -------------------------- | -------------------------------- |
+| CloudStack  | `CLOUDSTACK_API_URL`       | CloudStack API endpoint          |
+| CloudStack  | `CLOUDSTACK_API_KEY`       | CloudStack provider auth         |
+| CloudStack  | `CLOUDSTACK_SECRET_KEY`    | CloudStack provider auth         |
+| AWS         | `AWS_ACCESS_KEY_ID`        | AWS provider auth                |
+| AWS         | `AWS_SECRET_ACCESS_KEY`    | AWS provider auth                |
+
+### CCM Credentials (Command-Line Variables)
+
+CloudStack Cloud Controller Manager (CCM) requires separate credentials passed via `-var` parameters:
+
+| Variable                    | Purpose                              |
+| --------------------------- | ------------------------------------ |
+| `cloudstack_ccm_api_key`    | CloudStack API key for CCM           |
+| `cloudstack_ccm_secret_key` | CloudStack secret key for CCM        |
+
+These credentials are used by the CCM running inside the Kubernetes cluster and may differ from the provider credentials (e.g., a dedicated service account with restricted permissions).
 
 ## CI and Module Usage
 

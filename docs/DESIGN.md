@@ -136,23 +136,38 @@ The `terraform/` directory provides a thin wrapper that calls the module:
 module "cluster" {
   source = "../modules/cloudstack-k3s"
 
-  cluster_name          = var.cluster_name
-  cloudstack_api_key    = var.cloudstack_api_key
-  cloudstack_secret_key = var.cloudstack_secret_key
-  k3s_version           = var.k3s_version
+  cluster_prefix            = var.cluster_prefix
+  cloudstack_ccm_api_key    = var.cloudstack_ccm_api_key
+  cloudstack_ccm_secret_key = var.cloudstack_ccm_secret_key
+  k3s_version               = var.k3s_version
 
   options  = var.options
   advanced = var.advanced
 }
 ```
 
-**Sensitive variables** (`cloudstack_api_key`, `cloudstack_secret_key`) should be provided via environment variables to avoid committing secrets to version control:
+**Provider credentials** are read from standard environment variables:
 
 ```bash
-export TF_VAR_cloudstack_api_key="your-api-key"
-export TF_VAR_cloudstack_secret_key="your-secret-key"
-terraform plan
-terraform apply
+# CloudStack provider
+export CLOUDSTACK_API_URL="https://painel-cloud.locaweb.com.br/client/api"
+export CLOUDSTACK_API_KEY="your-api-key"
+export CLOUDSTACK_SECRET_KEY="your-secret-key"
+
+# AWS provider
+export AWS_ACCESS_KEY_ID="your-aws-access-key-id"
+export AWS_SECRET_ACCESS_KEY="your-aws-secret-access-key"
+```
+
+**CCM credentials** (`cloudstack_ccm_api_key`, `cloudstack_ccm_secret_key`) are passed via `-var` parameters:
+
+```bash
+terraform plan \
+  -var="cloudstack_ccm_api_key=your-ccm-api-key" \
+  -var="cloudstack_ccm_secret_key=your-ccm-secret-key"
+terraform apply \
+  -var="cloudstack_ccm_api_key=your-ccm-api-key" \
+  -var="cloudstack_ccm_secret_key=your-ccm-secret-key"
 ```
 
 ### Using the Module from an External Repository
@@ -163,10 +178,11 @@ The module can be sourced from a Git URL, enabling clusters to be provisioned fr
 module "cluster" {
   source = "git::https://github.com/org/locaweb-platform.git//modules/cloudstack-k3s?ref=v1.0.0"
 
-  cluster_name          = "my-cluster"
-  cloudstack_api_key    = var.cloudstack_api_key
-  cloudstack_secret_key = var.cloudstack_secret_key
-  k3s_version           = "v1.29.6+k3s1"
+  cluster_prefix            = "my-cluster"
+  cloudstack_ccm_api_key    = var.cloudstack_ccm_api_key
+  cloudstack_ccm_secret_key = var.cloudstack_ccm_secret_key
+  k3s_version               = "v1.29.6+k3s1"
+  base_domain               = "k8s.example.com"
 
   options = {
     agent_count = 6
@@ -211,20 +227,38 @@ Terraform generates a kubeconfig from the control plane and uses it for Helm rel
 
 ## Sensitive Inputs and Artifacts Handling
 
-### Sensitive Inputs (API Keys)
+### Provider Credentials (Environment Variables)
 
-Sensitive Terraform variables must be provided via environment variables rather than `.tfvars` files:
+Provider credentials are read from standard environment variables recognized by each provider:
 
 ```bash
-export TF_VAR_cloudstack_api_key="your-api-key"
-export TF_VAR_cloudstack_secret_key="your-secret-key"
+# CloudStack provider
+export CLOUDSTACK_API_URL="https://painel-cloud.locaweb.com.br/client/api"
+export CLOUDSTACK_API_KEY="your-api-key"
+export CLOUDSTACK_SECRET_KEY="your-secret-key"
+
+# AWS provider
+export AWS_ACCESS_KEY_ID="your-aws-access-key-id"
+export AWS_SECRET_ACCESS_KEY="your-aws-secret-access-key"
 ```
 
 This approach:
 
-- Prevents accidental commits of secrets to version control.
+- Leverages native provider authentication mechanisms.
 - Works consistently across local development and CI/CD pipelines.
-- Allows secrets to be injected from external sources (Vault, CI secrets, etc.).
+- Allows credentials to be injected from external sources (Vault, CI secrets, etc.).
+
+### CCM Credentials (Command-Line Variables)
+
+CloudStack Cloud Controller Manager (CCM) credentials are passed via `-var` parameters:
+
+```bash
+terraform apply \
+  -var="cloudstack_ccm_api_key=your-ccm-api-key" \
+  -var="cloudstack_ccm_secret_key=your-ccm-secret-key"
+```
+
+These credentials are used by the CCM running inside the Kubernetes cluster and may differ from the provider credentials (e.g., a dedicated service account with restricted permissions).
 
 The `terraform.tfvars` file is excluded via `.gitignore` as an additional safeguard.
 

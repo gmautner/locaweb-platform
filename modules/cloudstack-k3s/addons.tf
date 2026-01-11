@@ -70,8 +70,8 @@ resource "helm_release" "cloudstack_ccm" {
   values = [
     yamlencode({
       apiUrl    = var.advanced.cloudstack_api_url
-      apiKey    = var.cloudstack_api_key
-      secretKey = var.cloudstack_secret_key
+      apiKey    = var.cloudstack_ccm_api_key
+      secretKey = var.cloudstack_ccm_secret_key
     })
   ]
 

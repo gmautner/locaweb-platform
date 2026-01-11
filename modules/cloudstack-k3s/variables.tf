@@ -7,16 +7,16 @@ variable "cluster_prefix" {
   description = "Cluster prefix used to generate the cluster name with a random suffix."
 }
 
-variable "cloudstack_api_key" {
+variable "cloudstack_ccm_api_key" {
   type        = string
   sensitive   = true
-  description = "CloudStack API key."
+  description = "CloudStack API key for the Cloud Controller Manager (CCM)."
 }
 
-variable "cloudstack_secret_key" {
+variable "cloudstack_ccm_secret_key" {
   type        = string
   sensitive   = true
-  description = "CloudStack secret key."
+  description = "CloudStack secret key for the Cloud Controller Manager (CCM)."
 }
 
 variable "k3s_version" {
