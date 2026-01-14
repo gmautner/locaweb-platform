@@ -17,6 +17,9 @@ module "common" {
   ingress_proxy_protocol_enabled     = local.ingress_proxy_protocol_enabled
   ingress_proxy_protocol_trusted_ips = local.ingress_proxy_protocol_trusted_ips
 
+  cluster_name  = local.cluster_name
+  enable_backup = var.options.enable_backup
+
   depends_on = [terraform_data.k3s_ready, helm_release.cloudstack_ccm, helm_release.cloudstack_csi]
 }
 

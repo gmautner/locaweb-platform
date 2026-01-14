@@ -18,7 +18,7 @@ resource "aws_iam_user" "this" {
 # -----------------------------------------------------------------------------
 
 resource "aws_iam_policy" "this" {
-  name   = "${var.name}"
+  name   = var.name
   policy = jsonencode(var.policy)
   tags   = var.tags
 }

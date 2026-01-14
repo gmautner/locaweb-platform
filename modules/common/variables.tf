@@ -12,6 +12,11 @@ variable "cert_manager_email" {
   description = "Email address for Let's Encrypt certificate notifications."
 }
 
+variable "cluster_name" {
+  type        = string
+  description = "Name of the cluster. Used for AWS backup resources naming."
+}
+
 # =============================================================================
 # OPTIONAL VARIABLES
 # =============================================================================
@@ -46,3 +51,8 @@ variable "k8up_timezone" {
   description = "Timezone for k8up backups."
 }
 
+variable "enable_backup" {
+  type        = bool
+  default     = false
+  description = "Enable offsite AWS backup with S3 bucket and IAM resources."
+}

@@ -8,7 +8,7 @@ base_domain    = "k8s.example.com"
 
 # =============================================================================
 # OPTIONAL
-# Uncomment fields to override defaults.
+# Uncomment fields to override (commented values are the defaults).
 # =============================================================================
 
 # options = {
@@ -23,9 +23,10 @@ base_domain    = "k8s.example.com"
 #   oidc_client_id         = ""
 #   oidc_username_claim    = "preferred_username"
 #   cert_manager_email     = "platform@locaweb.com.br"
-#   kured_start_time       = "5:00"
-#   kured_end_time         = "6:59"
-#   kured_time_zone        = "UTC"
+#   kured_start_time          = "5:00"
+#   kured_end_time            = "6:59"
+#   kured_time_zone           = "UTC"
+#   enable_backup             = false
 # }
 
 # =============================================================================

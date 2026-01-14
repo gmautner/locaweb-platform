@@ -58,6 +58,7 @@ variable "options" {
     kured_start_time       = optional(string, "5:00")
     kured_end_time         = optional(string, "6:59")
     kured_time_zone        = optional(string, "UTC")
+    enable_backup          = optional(bool, false)
   })
   default = {}
 
